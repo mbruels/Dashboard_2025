@@ -1201,7 +1201,7 @@ header #headnav a.hn-bad,header #headnav a.hn-crit{border-color:color-mix(in srg
       <div class="titlerow"><h1 id="app-title">Dashboard 2026</h1><button id="refresh" type="button" class="refresh" aria-label="Aktualisieren" title="Aktualisieren"><svg class="mi" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4.5V11h-6.5"/></svg></button><span class="updmini" id="upd-mini"></span></div>
       <div class="dt"><span class="clock" id="clock">--:--:--</span><span class="sub" id="sub"></span></div>
       <a class="warnpill wp-info" id="warnpill" href="#warnungen"><span class="wp-dot"></span><span class="wp-t">Warnungen</span><span class="wp-v" id="warnpill-v">…</span><span class="wp-go">›</span></a>
-      <div class="qapps"><a class="qapp" id="qa-cal" href="weekcal://"><svg class="mi" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>WeekCal</a><a class="qapp" id="qa-rem" href="x-apple-reminderkit://"><svg class="mi" viewBox="0 0 24 24" aria-hidden="true"><circle cx="5.5" cy="7" r="1.6"/><circle cx="5.5" cy="12" r="1.6"/><circle cx="5.5" cy="17" r="1.6"/><path d="M10 7h10M10 12h10M10 17h10"/></svg>Erinnerungen</a></div>
+      <div class="qapps"><a class="qapp" id="qa-cal" href="calshow://"><svg class="mi" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>Kalender</a><a class="qapp" id="qa-rem" href="x-apple-reminderkit://"><svg class="mi" viewBox="0 0 24 24" aria-hidden="true"><circle cx="5.5" cy="7" r="1.6"/><circle cx="5.5" cy="12" r="1.6"/><circle cx="5.5" cy="17" r="1.6"/><path d="M10 7h10M10 12h10M10 17h10"/></svg>Erinnerungen</a></div>
     </div>
     <div class="hrow">
       <div class="places">
@@ -1583,7 +1583,7 @@ header #headnav a.hn-bad,header #headnav a.hn-crit{border-color:color-mix(in srg
 
 <div class="view" id="v-rhein" data-view="rhein" hidden>
 <section id="rhein"><div class="sec-title"><h2 id="rhein-sec">Rhein</h2></div></section>
-<div class="seg tabseg" data-tabs="pg"><button type="button" data-t="rhein" class="on">Jetzt</button><button type="button" data-t="wv">Prognose</button><button type="button" data-t="fl">Bäche</button><button type="button" data-t="ships">Schiffe</button></div>
+<div class="seg tabseg" data-tabs="pg"><button type="button" data-t="rhein" class="on">Jetzt</button><button type="button" data-t="wv">Prognose</button><button type="button" data-t="ships">Schiffe</button></div>
 <div class="grid">
   <section class="card wide" data-tp="pg:rhein">
     <div class="card-head"><h2 id="pegel-title">Pegel Düsseldorf</h2><span class="src" id="pegel-src">WSV PEGELONLINE · Rhein-km 744,2</span></div>
@@ -1593,7 +1593,7 @@ header #headnav a.hn-bad,header #headnav a.hn-crit{border-color:color-mix(in srg
     <div class="card-head"><h2>Prognose Wasserstand</h2><span class="src">Bundesanstalt für Gewässerkunde · PEGELONLINE</span></div>
     <div id="pegel-wv"><div class="state">wird geladen …</div></div>
   </section>
-  <section class="card wide" id="lp-card" data-tp="pg:fl" hidden>
+  <section class="card wide" id="lp-card" data-tp="pg:rhein">
     <div class="card-head"><h2 id="lp-title">Düssel, Anger &amp; Itter</h2><span class="src">LANUK NRW · Hochwasserportal</span></div>
     <div id="landespegel"><div class="state">wird geladen …</div></div>
   </section>
@@ -1771,8 +1771,8 @@ header #headnav a.hn-bad,header #headnav a.hn-crit{border-color:color-mix(in srg
       <span class="hint">Gilt für den gerade gewählten Ort. Autobahn und Fahrtrichtung, getrennt mit Semikolon, z. B. „A43 Münster; A2 Oberhausen“.</span>
     </div>
     <div class="field">
-      <label for="qa-cal-in">Kopf-Knopf „WeekCal“</label>
-      <div class="inline"><input id="qa-cal-in" type="text" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" placeholder="weekcal://"><button type="button" data-qasave="cal">Speichern</button></div>
+      <label for="qa-cal-in">Kopf-Knopf „Kalender“</label>
+      <div class="inline"><input id="qa-cal-in" type="text" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" placeholder="calshow://"><button type="button" data-qasave="cal">Speichern</button></div>
       <label for="qa-rem-in" style="margin-top:10px">Kopf-Knopf „Erinnerungen“</label>
       <div class="inline"><input id="qa-rem-in" type="text" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" placeholder="x-apple-reminderkit://"><button type="button" data-qasave="rem">Speichern</button></div>
       <label for="qa-sonos-in" style="margin-top:10px">Knopf „Sonos · WDR 2“</label>
@@ -1830,6 +1830,6 @@ header #headnav a.hn-bad,header #headnav a.hn-crit{border-color:color-mix(in srg
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
 <script src="config/meine-daten.js?v=1"></script>
-<script src="app.js?v=320"></script>
+<script src="app.js?v=321"></script>
 </body>
 </html>

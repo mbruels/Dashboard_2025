@@ -494,7 +494,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("#wx-seg [data-wx
 function tabSet(g,v){const seg=document.querySelector('.tabseg[data-tabs="'+g+'"]');if(!seg||!seg.querySelector('[data-t="'+v+'"]'))return;
   seg.querySelectorAll("[data-t]").forEach(b=>b.classList.toggle("on",b.dataset.t===v));document.querySelectorAll('[data-tp^="'+g+':"]').forEach(p=>p.hidden=p.dataset.tp!==g+":"+v);store("tab_"+g,v);}
 document.addEventListener("click",e=>{const b=e.target.closest(".tabseg [data-t]");if(b)tabSet(b.closest(".tabseg").dataset.tabs,b.dataset.t);});
-document.querySelectorAll(".tabseg[data-tabs]").forEach(s=>{const v=load("tab_"+s.dataset.tabs);if(v)tabSet(s.dataset.tabs,v);});
+document.querySelectorAll(".tabseg[data-tabs]").forEach(s=>{const v=load("tab_"+s.dataset.tabs);if(v&&s.querySelector('[data-t="'+v+'"]'))tabSet(s.dataset.tabs,v);});
 /* Fußball: nächste Spiele von Fortuna Düsseldorf und Borussia Dortmund (OpenLigaDB, frei, ohne Schlüssel) */
 const FB=[{k:"f95",name:"Fortuna Düsseldorf",short:"F95"},{k:"bvb",name:"Borussia Dortmund",short:"BVB"}];
 async function loadFussball(){return;const y=new Date().getFullYear(),season=new Date().getMonth()>=6?y:y-1;
@@ -977,7 +977,7 @@ async function loadRhein(){
     const LT=cm.value!=null?levelText(cm.value,M,ts.unit||"cm"):null;
     const stateDe=LT&&M.MW!=null?LT.st:({low:"Niedrigwasser (unter MNW)",normal:"Mittelwasserbereich",high:"Hochwasser (über MHW)",unknown:"ohne Einstufung"}[cm.stateMnwMhw]||"");
     const cls=LT&&M.MW!=null?LT.cls:cm.stateMnwMhw==="high"?"bad":cm.stateMnwMhw==="low"?"warn":"ok";
-    setKpi("k-rhein",fmt(cm.value)+"<small> "+esc(ts.unit||"cm")+"</small>",(LT&&LT.cmp?LT.cmp.replace(/ \(.*\)/,"")+" · ":"")+tr,cls);
+    setKpi("k-rhein",fmt(cm.value)+"<small> "+esc(ts.unit||"cm")+"</small>",(LT&&LT.cmp?LT.cmp.replace(/ \(.*\)/,"")+" · ":"")+tr,cls);lpTile();
     let html='<div class="row"><div><div class="big">'+fmt(cm.value)+'<span style="font-size:22px"> '+esc(ts.unit||"cm")+'</span></div><div class="muted">'+esc(wName)+' · '+tr+(cm.timestamp?' · '+hhmm(cm.timestamp)+' Uhr':'')+'</div></div><span class="pill p-'+cls+'"><i></i>'+esc(stateDe||"–")+'</span></div>'+(LT&&LT.cmp?'<div class="cmp">'+esc(LT.cmp)+'</div>':'')+levelScale(cm.value,M)+
       (cvRaw.length?'<div class="muted small">'+["NNW","MNW","MW","MHW","HSW","HHW"].filter(k=>M[k]!=null).map(k=>k+" "+fmt(M[k])).join(" · ")+(C.isDus?" · Hochwassermarke I 710 · II 830":"")+' cm <span title="NNW niedrigster, MNW mittlerer niedrigster, MW Mittel-, MHW mittlerer höchster, HSW höchster Schifffahrtswasserstand, HHW höchster bekannter Wasserstand">ⓘ</span></div>':'');
     if(Array.isArray(hist)&&hist.length>2)html+=spark(hist);
@@ -988,10 +988,9 @@ async function loadRhein(){
       (!C.isDus&&st.km!=null?fact(fmt(distKm(C.lat,C.lon,st.latitude,st.longitude),0)+" km","Entfernung"):"")+'</div>'+
       (C.isDus?'<div class="muted small">Schifffahrt: '+link("https://www.elwis.de/","ELWIS")+'</div>':'<div class="muted small">Nächster Pegel der Bundeswasserstraßen. Landesgewässer: '+link("https://www.hochwasserzentralen.de/","Hochwasserzentralen")+'</div>');
     $("pegel").innerHTML=html;setStatus("pegel",true);loadRheinWV(uuid,cm.value);
-  }catch(e){const w=$("pegel-wv");if(w)w.innerHTML="";setStatus("pegel",false,errText(e));$("pegel").innerHTML=stateBox("Pegel nicht verfügbar – "+errText(e)+".",link("https://www.pegelonline.wsv.de/gast/start","PEGELONLINE"));setKpi("k-rhein","–","kein Pegel","info");}
+  }catch(e){const w=$("pegel-wv");if(w)w.innerHTML="";setStatus("pegel",false,errText(e));$("pegel").innerHTML=stateBox("Pegel nicht verfügbar – "+errText(e)+".",link("https://www.pegelonline.wsv.de/gast/start","PEGELONLINE"));setKpi("k-rhein","–","kein Pegel","info");lpTile();}
 }
 async function loadLandespegel(){
-  const fb=document.querySelector('.tabseg[data-tabs="pg"] [data-t="fl"]');if(fb)fb.hidden=!C.isDus;if(!C.isDus){if(fb&&fb.classList.contains("on"))tabSet("pg","rhein");return;}
   try{const d=await getData("landespegel.json");const l=(d.data||[]).filter(x=>x.value!=null).sort((a,b)=>["Düssel","Anger","Itter"].indexOf(a.water)-["Düssel","Anger","Itter"].indexOf(b.water));
     if(!l.length)throw new Error("keine Messwerte");
     $("landespegel").innerHTML=l.map(x=>{const M={MNW:x.mnw,MW:x.mw,MHW:x.mhw,I:x.i1,II:x.i2,III:x.i3};const t=levelText(x.value,M,x.unit);
@@ -1001,10 +1000,12 @@ async function loadLandespegel(){
       '<div class="muted small" style="margin-top:6px">Informationswerte 1–3 sind die Hochwasser-Meldestufen des Landes NRW. '+link("https://hochwasserportal.nrw.de/","Hochwasserportal NRW")+'</div>';
     const worst=l.map(x=>levelText(x.value,{MNW:x.mnw,MW:x.mw,MHW:x.mhw,I:x.i1,II:x.i2,III:x.i3}).cls);
     setStatus("landespegel",true,"Stand "+dataAge(d));
-    TILE_LP=worst.includes("crit")||worst.includes("bad")?"Düssel/Anger erhöht":"";
+    TILE_LP=l.map(x=>x.water+(l.filter(y=>y.water===x.water).length>1?" "+x.name.replace(/_\d+$/,""):"")+" "+fmt(x.value)).join(" · ")+" cm";lpTile();
   }catch(e){$("landespegel").innerHTML=stateBox("Landespegel nicht verfügbar – "+errText(e)+".",link("https://hochwasserportal.nrw.de/","Hochwasserportal NRW"));}
 }
 let TILE_LP="";
+// Kachel „Pegel“: Bäche (Düssel, Anger, Itter) unter dem Rheinpegel ergänzen
+function lpTile(){const n=document.querySelector("#k-rhein .note");if(!n||!TILE_LP)return;const base=n.textContent.split(" | ")[0].trim();n.textContent=(base&&base!=="wird geladen"?base+" | ":"")+TILE_LP;}
 function spark(h){
   const W=640,H=110,p=8,pl=40;const v=h.map(x=>x.value),t=h.map(x=>new Date(x.timestamp).getTime());
   let mn=Math.min(...v),mx=Math.max(...v);if(mx-mn<10){mx+=5;mn-=5;}
@@ -2256,14 +2257,14 @@ function spanLast(){["tiles","toolgrid","headnav"].forEach(id=>{const g=document
   if(cols===2&&v.length%2===1)v[v.length-1].classList.add("span2");});}
 ["tiles","toolgrid","headnav"].forEach(id=>{const g=document.getElementById(id);if(g)new MutationObserver(()=>{clearTimeout(spanLast.t);spanLast.t=setTimeout(spanLast,50);}).observe(g,{childList:true,subtree:false,attributes:true,attributeFilter:["hidden","class","style"]});});
 window.addEventListener("resize",()=>spanLast());document.addEventListener("click",()=>setTimeout(spanLast,120));setTimeout(spanLast,300);
-// Kopf-Knöpfe WeekCal / Erinnerungen: Ziel lokal anpassbar (z. B. Kurzbefehl)
-const QA={cal:["qa-cal","weekcal://"],rem:["qa-rem","x-apple-reminderkit://"],sonos:["qa-sonos","shortcuts://run-shortcut?name=WDR%202%20Sonos"]};
+// Kopf-Knöpfe Kalender / Erinnerungen: Ziel lokal anpassbar (z. B. Kurzbefehl)
+const QA={cal:["qa-cal","calshow://"],rem:["qa-rem","x-apple-reminderkit://"],sonos:["qa-sonos","shortcuts://run-shortcut?name=WDR%202%20Sonos"]};
 function scUrl(u){const m=/^shortcuts:\/\/run-shortcut\?name=([^&]+)/.exec(u||"");if(!m)return u;const back=encodeURIComponent(location.href.split("#")[0]);return "shortcuts://x-callback-url/run-shortcut?name="+m[1]+"&x-success="+back+"&x-cancel="+back+"&x-error="+back;}
 document.addEventListener("click",e=>{const a=e.target.closest("#qa-sonos,[data-sonos]");if(!a||(typeof HEDIT!=="undefined"&&HEDIT))return;e.preventDefault();location.href=scUrl(load("qa_sonos")||QA.sonos[1]);});
 function qaInit(){Object.entries(QA).forEach(([k,[id,def]])=>{const v=load("qa_"+k)||"";const a=$(id);if(a)a.href=v||def;const i=$(id+"-in");if(i)i.value=v;});}
 qaInit();
 document.addEventListener("click",e=>{const b=e.target.closest("[data-qasave]");if(!b)return;const k=b.dataset.qasave;const i=$(QA[k][0]+"-in");const v=(i.value||"").trim();
-  if(v&&!/^[a-z][a-z0-9+.-]*:/i.test(v)){i.setCustomValidity("Bitte eine Adresse wie weekcal:// oder shortcuts://… eintragen");i.reportValidity();return;}i.setCustomValidity("");store("qa_"+k,v||null);qaInit();b.textContent="Gespeichert ✓";setTimeout(()=>b.textContent="Speichern",1500);});
+  if(v&&!/^[a-z][a-z0-9+.-]*:/i.test(v)){i.setCustomValidity("Bitte eine Adresse wie calshow:// oder shortcuts://… eintragen");i.reportValidity();return;}i.setCustomValidity("");store("qa_"+k,v||null);qaInit();b.textContent="Gespeichert ✓";setTimeout(()=>b.textContent="Speichern",1500);});
 async function loadEL(){const box=$("el-list");if(!box)return;const ck=(typeof RS!=="undefined"&&RS.city)||C.key;ELKEY=ck;
   if(!ELP||(ELP.auto&&ELP.k!==ck)){const f=elFavs().find(x=>x.k===ck);ELP={...(f||{k:ck,name:C.short||C.town,lat:C.center.lat,lon:C.center.lon}),auto:1};}
   renderELWhere();renderELSeg();$("el-title").textContent="E-Ladesäulen · "+ELP.name;
