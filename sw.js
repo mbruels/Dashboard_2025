@@ -1,6 +1,6 @@
 // Dashboard – Offline-Hülle. Die App-Dateien werden zwischengespeichert,
 // Live-Daten der Schnittstellen dagegen nie (sie laufen immer direkt über das Netz).
-const CACHE = "dashboard-mb-v3";
+const CACHE = "dashboard-mb-v5";
 const SHELL = ["./", "index.html", "config/meine-daten.js", "app.js", "manifest.webmanifest", "icons/apple-touch-icon.png", "icons/icon-192.png", "icons/icon-512.png"];
 
 self.addEventListener("install", e => {

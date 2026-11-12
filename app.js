@@ -603,7 +603,7 @@ function applyPlaceUi(){
   {const fav=C.isDus||C.key==="korschenbroich";
     $("bahn").querySelector("h2").textContent=fav?"Bahn-Verbindungen":"Bahn-Verbindung suchen";
     $("trip-from").value="";$("trip-to").value="";$("trip-from").placeholder=fav?"z. B. Korschenbroich":"Startbahnhof oder Adresse";$("trip-to").placeholder="Zielbahnhof oder Adresse";
-    if(!fav)setKpi("k-bahn","Suche<small> Bahn</small>","Verbindung suchen · Abfahrten vor Ort","info");}
+    }
   $("app-title").textContent=MD_TITEL;{const f=$("ft-name");if(f&&MD.name)f.textContent="© "+MD.name;}
   $("wx-h").innerHTML="Wetter <strong>"+esc(C.name)+"</strong>";
   if(typeof route==="function")route();
@@ -1159,6 +1159,23 @@ function composeTile(id,group,main,cls){
   const RK=["ok","info","warn","bad","crit"];let cl2=parts._cls||"info";if(parts._rcls&&(group==="traffic"||RK.indexOf(parts._rcls)>RK.indexOf(cl2)))cl2=parts._rcls;
   setKpi(id,parts._main||"–",notes.join(" · "),cl2);
 }
+// ================= S8-Kachel: Korschenbroich ⇄ Düsseldorf-Friedrichstadt (beide Richtungen) =================
+let S8DIR=null;
+document.addEventListener("click",e=>{const a=e.target.closest(".hn-s8,#k-bahn");if(!a)return;
+  // Zeile anhand der Tipp-Position bestimmen (Kinder des Knopfs nehmen keine Klicks an)
+  const rows=[...a.querySelectorAll("[data-s8dir]")];const top=x=>(x.querySelector("b")||x).getBoundingClientRect();let r=null,best=1e9;rows.forEach(x=>{const b=top(x),d=Math.abs(e.clientY-(b.top+b.bottom)/2);if(d<best){best=d;r=x;}});if(best>40)r=null;if(r)S8DIR=r.dataset.s8dir;},true);
+async function loadS8(){const el=$("k-bahn");if(!el)return;
+  try{const d=await getData("trips.json");const now=Date.now()-60e3;let cls="ok";
+    const row=(key,dir,lbl)=>{const t=(d.data||[]).find(x=>x.key===key);const j=t&&(t.journeys||[]).find(j=>new Date(j.depEst||j.dep).getTime()>=now);
+      if(!j)return '<div class="s8r" data-s8dir="'+dir+'"><span>'+lbl+'</span><b>–</b></div>';
+      const ride=j.legs.filter(l=>!l.walk),cx=ride.some(l=>l.cancelled),m=j.depEst&&j.dep?Math.round((new Date(j.depEst)-new Date(j.dep))/6e4):0;
+      if(cx)cls="bad";else if(m>=5&&cls!=="bad")cls="warn";
+      return '<div class="s8r" data-s8dir="'+dir+'"><span>'+lbl+'</span><b>'+hhmm(j.dep)+'</b>'+(cx?'<em class="s8x">fällt aus</em>':m>0?'<em class="s8d">+'+m+'</em>':'')+'<small>'+esc(ride.map(l=>l.line).join(" › "))+(ride[0]&&ride[0].plat?' · Gl. '+esc(ride[0].plat):'')+' · an '+hhmm(j.arrEst||j.arr)+'</small></div>';};
+    el.querySelector(".lbl").textContent="S8 · nächste Bahn";
+    el.querySelector(".val").innerHTML=row("kb-dus","korschenbroich>dus","Korschenbroich → Friedrichstadt")+row("dus-kb","dus>korschenbroich","Friedrichstadt → Korschenbroich");
+    el.querySelector(".note").textContent="Echtzeit "+dataAge(d)+" · antippen für alle Fahrten";
+    ["s-ok","s-warn","s-bad","s-crit","s-info"].forEach(c=>el.classList.remove(c));el.classList.add("s-"+cls);try{buildViewbar();}catch(e){}
+  }catch(e){el.querySelector(".val").textContent="–";el.querySelector(".note").textContent="Bahndaten nicht verfügbar";}}
 // ================= Bahn-Verbindungen =================
 const TRIP_KEYS={dus:["dus-kb","kb-dus"],korschenbroich:["kb-dus","dus-kb"],mgladbach:["mg-dus","dus-mg"]};
 // Bahnhöfe je Ort und Kürzel für die Bahnverbindungen
@@ -1178,9 +1195,9 @@ async function loadTrips(opt){opt=opt||{};
       const k1=(TRIP_KEYS[C.key]||TRIP_KEYS.dus)[0],j=first(k1);
       if(j){const m=j.depEst&&j.dep?Math.round((new Date(j.depEst)-new Date(j.dep))/6e4):0;
         TILE_PARTS.mobil.bahn=(C.isDus?"Bahn nach Korschenbroich":"Bahn nach Düsseldorf")+" an "+hhmm(j.arrEst||j.arr);
-        composeTile("k-bahn","mobil",hhmm(j.dep)+(m>0?'<small style="color:var(--bad)"> +'+m+'</small>':"")+"<small> "+esc((j.legs.find(l=>!l.walk)||{}).line||"")+"</small>",m>=10?"warn":"info");
+        if(false)composeTile("k-bahn","mobil",hhmm(j.dep)+(m>0?'<small style="color:var(--bad)"> +'+m+'</small>':"")+"<small> "+esc((j.legs.find(l=>!l.walk)||{}).line||"")+"</small>",m>=10?"warn":"info");
         if(false)setKpi("k-bahn",hhmm(j.dep)+(m>0?'<small style="color:var(--bad)"> +'+m+'</small>':"")+"<small> "+esc((j.legs.find(l=>!l.walk)||{}).line||"")+"</small>",(C.isDus?"nach Korschenbroich":"nach Düsseldorf")+" · an "+hhmm(j.arrEst||j.arr)+" · "+j.changes+" Umst.",m>=10?"warn":"info");}
-      else{TILE_PARTS.mobil.bahn="keine Bahn im abgerufenen Zeitraum";composeTile("k-bahn","mobil");}}
+      else{TILE_PARTS.mobil.bahn="keine Bahn im abgerufenen Zeitraum";}}
     box.innerHTML=list.map(t=>{
       const js=(t.journeys||[]).filter(j=>new Date(j.depEst||j.dep).getTime()>=now);
       const head='<div class="sublbl" style="margin-top:6px">'+esc(t.from)+' → '+esc(t.to)+'</div>';
@@ -1815,7 +1832,7 @@ function renderEFA(){const d=EFADATA;if(!d)return;
     const short=x=>x.replace(/^(Korschenbroich|Mönchengladbach|Düsseldorf),?\s*/,"");
     const nx=pairs.map(x=>({x,r:x.rows.filter(r=>new Date(r.depEst||r.dep).getTime()>=now)}));
     const f=nx[0]&&nx[0].r[0];
-    if(f){TILE_PARTS.mobil.bus="Bus "+esc(f.line)+" "+hhmm(f.depEst||f.dep)+" "+short(nx[0].x.from)+" → "+short(nx[0].x.to);composeTile("k-bahn","mobil");}
+    if(f){TILE_PARTS.mobil.bus="Bus "+esc(f.line)+" "+hhmm(f.depEst||f.dep)+" "+short(nx[0].x.from)+" → "+short(nx[0].x.to);}
     $("efa-title").textContent="Direktfahrten";
     const di=Math.min(+(load("busdir_"+ec().key)||0),nx.length-1);
     $("efa-stops").innerHTML=nx.map(({x},i)=>'<button type="button" data-bdir="'+i+'" class="'+(i===di?"on":"")+'">'+esc(short(x.from))+' → '+esc(short(x.to))+'</button>').join("");
@@ -1829,7 +1846,7 @@ function renderEFA(){const d=EFADATA;if(!d)return;
   EFASTOP=d.data.stop||"";efaGo();
   if(!rows.length){$("efa").innerHTML=busTripsHtml(d.data.stop)+stateBox(f?"Keine Linie fährt Richtung „"+esc(DIRF[ec().key])+"“. Für eine Verbindung mit Umsteigen den Knopf oben antippen.":"Keine weiteren Abfahrten im abgerufenen Zeitraum.");return;}
   {const x=rows[0];TILE_PARTS.mobil.bus=esc(x.line)+" "+hhmm(x.est||x.planned)+" ab "+esc(d.data.stop.replace(/^(Düsseldorf|Korschenbroich|Mönchengladbach),?\s*/,""));
-    if(!(ec().isDus||ec().key==="korschenbroich"))composeTile("k-bahn","mobil",hhmm(x.est||x.planned)+"<small> "+esc(x.line)+"</small>");else composeTile("k-bahn","mobil");}
+    }
   $("efa").innerHTML=busTripsHtml(d.data.stop)+'<div class="muted small">'+esc(d.data.stop)+' · alle Abfahrten · Echtzeit abgerufen '+dataAge(d)+'</div><div class="tbl-wrap">'+depTable(rows)+'</div>';
 }
 let BUSF=null;
@@ -2377,7 +2394,7 @@ function renderPk(id,data,intro){const box=$(id);if(!data)return;
   [...box.querySelectorAll(".pka:empty")].forEach(async el=>{const v=await addrOf(+el.dataset.lat,+el.dataset.lon);if(v&&el.isConnected){el.textContent=v;const it=data.find(x=>Math.abs(x.lat-el.dataset.lat)<1e-6&&Math.abs(x.lon-el.dataset.lon)<1e-6);if(it)it.addr=v;}});}
 async function refreshAll(force){
   if(busy){pending=true;return;}busy=true;const btn=$("refresh");btn.disabled=true;
-  const tasks=[loadAlerts(),scanFavAlarms(),loadWeather(),loadObs(),loadAir(),loadRhein(),loadLandespegel(),loadAutobahn(),loadTomTom(),loadBlaulicht(),loadEinsaetze(),loadTrips(),loadEFA(),loadBike(),loadFuel(),loadBoerse(),loadNews(),loadSammler()];
+  const tasks=[loadAlerts(),scanFavAlarms(),loadWeather(),loadObs(),loadAir(),loadRhein(),loadLandespegel(),loadAutobahn(),loadTomTom(),loadBlaulicht(),loadEinsaetze(),loadTrips(),loadS8(),loadEFA(),loadBike(),loadFuel(),loadBoerse(),loadNews(),loadSammler()];
   tasks.push(loadVT(),loadDatteln());if(location.hash==="#staus/reise")tasks.push(loadReise(true));else{RS.at=0;if(TTKEY)setTimeout(()=>{try{loadReise(false);}catch(e){}},4000);}if(ELKEY)tasks.push(loadEL());tasks.push(loadGarages());if(PKDAT)tasks.push(loadPkDat());
   renderWebcamLinks();
   if(force||Date.now()-lastSlow>3600e3||slowKey!==C.key){
@@ -2425,13 +2442,18 @@ function buildViewbar(){
     $("warnpill-v").textContent=tot?tot+(tot===1?" Warnung":" Warnungen")+" · "+L.map(x=>x.name+": "+short(x.title)).join(" · ").slice(0,90):"Keine Warnungen · alle 5 Orte ruhig";}
   else{const wt=$("k-warn"),wp=$("warnpill");if(wt&&wp){const st=(["ok","warn","bad","crit","info"].find(c=>wt.classList.contains("s-"+c)))||"info";wp.className="warnpill wp-"+st+(cur==="warnungen"?" on":"");
     $("warnpill-v").textContent=[((wt.querySelector(".val")||{}).textContent||"").replace(/\s+/g," ").trim(),((wt.querySelector(".note")||{}).textContent||"").trim()].filter(x=>x&&x!=="–").join(" · ").slice(0,60)||"…";}}
-  {const hn=$("headnav");if(hn&&!(typeof HEDIT!=="undefined"&&HEDIT))hn.innerHTML=[...document.querySelectorAll("#tiles .tile")].filter(t=>!t.hidden&&!["warnungen","quellen","einstellungen"].includes(t.dataset.view)).map(t=>{const v=t.dataset.view;const on=v===cur||(g&&groupOf(v)===g);const st=(["ok","warn","bad","crit","info"].find(c=>t.classList.contains("s-"+c)))||"info";return '<a data-v="'+v+'" class="hbtn hn-'+st+(on?" on":"")+'" href="#'+(v==="staus"?"staus/reise":v)+'"><span class="hn-l">'+esc(t.querySelector(".lbl").textContent)+'</span><span class="hn-v">'+esc(((t.querySelector(".val")||{}).textContent||"").replace(/\s+/g," ").trim().replace(/^[–?-]$/,"…").slice(0,26))+'</span></a>';}).join("")+'<button type="button" class="hbtn hn-info hn-radio'+($("radio-list")&&!$("radio-list").hidden?" on":"")+'" data-radio-open aria-controls="radio-list"><span class="hn-l">Radio</span><span class="hn-v">'+esc((()=>{const o=document.querySelector("#radio .rbtn.on");return o?o.querySelector("b").textContent.trim()+" läuft":"Sonos · WDR 2 · weitere";})())+'</span></button>';}
+  {const hn=$("headnav");if(hn&&!(typeof HEDIT!=="undefined"&&HEDIT))hn.innerHTML=[...document.querySelectorAll("#tiles .tile")].filter(t=>!t.hidden&&!["warnungen","quellen","einstellungen"].includes(t.dataset.view)).map(t=>{const v=t.dataset.view;const on=v===cur||(g&&groupOf(v)===g);const st=(["ok","warn","bad","crit","info"].find(c=>t.classList.contains("s-"+c)))||"info";
+    if(v==="bahn"){const rows=[...t.querySelectorAll(".s8r")].map(r=>'<span class="s8n" data-s8dir="'+r.dataset.s8dir+'"><span class="s8a">'+esc(r.querySelector("span").textContent)+'</span><b>'+esc(r.querySelector("b").textContent)+'</b>'+(r.querySelector("em")?'<em>'+esc(r.querySelector("em").textContent)+'</em>':'<em></em>')+'</span>').join("");
+      return '<a data-v="bahn" class="hbtn hn-'+st+' hn-s8'+(on?" on":"")+'" href="#bahn"><span class="hn-l">S8 · nächste Bahn</span>'+(rows||'<span class="hn-v">wird geladen …</span>')+'</a>';}
+    return '<a data-v="'+v+'" class="hbtn hn-'+st+(on?" on":"")+'" href="#'+(v==="staus"?"staus/reise":v)+'"><span class="hn-l">'+esc(t.querySelector(".lbl").textContent)+'</span><span class="hn-v">'+esc(((t.querySelector(".val")||{}).textContent||"").replace(/\s+/g," ").trim().replace(/^[–?-]$/,"…").slice(0,26))+'</span></a>';}).join("")+'<button type="button" class="hbtn hn-info hn-radio'+($("radio-list")&&!$("radio-list").hidden?" on":"")+'" data-radio-open aria-controls="radio-list"><span class="hn-l">Radio</span><span class="hn-v">'+esc((()=>{const o=document.querySelector("#radio .rbtn.on");return o?o.querySelector("b").textContent.trim()+" läuft":"Sonos · WDR 2 · weitere";})())+'</span></button>';}
   $("viewbar-links").innerHTML=[...document.querySelectorAll("#tiles .tile")].filter(t=>!t.hidden).map(t=>{const on=t.dataset.view===cur||(g&&groupOf(t.dataset.view)===g);return '<a href="#'+t.dataset.view+'" class="'+(on?"on":"")+'">'+esc(t.querySelector(".lbl").textContent)+'</a>';}).join("");
 }
 let ROUTEKEY=null;
 window.addEventListener("hashchange",route);
 function route(){try{route0();}finally{const h=location.hash.slice(1);ROUTEKEY=(h.split("/")[0]||"")+"/"+(h.split("/")[1]||"reise");}}
 function route0(){
+  if(location.hash==="#bahn"){const dir=S8DIR||(C.key==="korschenbroich"?"korschenbroich>dus":"dus>korschenbroich");S8DIR=null;
+    history.replaceState(null,"","#staus/reise");RS.mode="bahn";rsCity(dir.split(">")[0]);RS.tdir=dir;rsMode("bahn");}
   {const h=location.hash.slice(1);if(h==="verkehr"||h==="staus/meld"){history.replaceState(null,"","#staus/karte");}
   if(h==="stadtverkehr"||h==="stadtkorschenbroich"){const k=h==="stadtverkehr"?"dus":"korschenbroich";MAPFOCUS=1;history.replaceState(null,"","#staus/karte");setTimeout(()=>mapGo(k),250);}}
   let v=location.hash.slice(1);const pane=v.split("/")[1]||"reise";v=v.split("/")[0];
@@ -2545,11 +2567,11 @@ document.addEventListener("click",e=>{if(!HEDIT)return;const t=e.target.closest(
   reorder(hn,"[data-v]",()=>!HEDIT,saveHead,320);reorder(tg,"[data-tool]:not([data-tool='arrange'])",()=>!HEDIT,saveTools,320);
   const ar=$("arrange-tool");if(ar)ar.hidden=true;}
 $("arrange-reset").addEventListener("click",()=>{store("tile_order",null);applyTileOrder();saveTileOrder();});
-applyTileOrder();{const kb=$("k-bahn");if(kb)kb.hidden=true;}route();
+applyTileOrder();route();
 applyPlaceUi();renderSources();tick();setInterval(tick,1000);
 
 refreshAll(true);
-setInterval(()=>{if(!document.hidden)refreshAll(false);},10*60*1000);
+setInterval(()=>{if(!document.hidden)refreshAll(false);},10*60*1000);setInterval(()=>{if(!document.hidden)loadS8();},60*1000);
 setInterval(()=>{if(!document.hidden&&!busy){loadAutobahn();loadTomTom();}},3*60*1000);
 document.addEventListener("visibilitychange",()=>{if(!document.hidden&&Date.now()-lastRun>5*60*1000)refreshAll(false);});
 if("serviceWorker" in navigator&&location.protocol==="https:"){navigator.serviceWorker.register("sw.js").catch(()=>{});}

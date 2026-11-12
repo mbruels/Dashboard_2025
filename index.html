@@ -1192,6 +1192,23 @@ header #headnav a.hn-bad,header #headnav a.hn-crit{border-color:color-mix(in srg
 #headnav a,#headnav button,#toolgrid a,#toolgrid button{-webkit-touch-callout:none;-webkit-user-drag:none;-webkit-user-select:none;user-select:none}
 #headnav.h-dragging,#toolgrid.h-dragging{touch-action:none}
 #headnav .h-chosen,#toolgrid .h-chosen{transform:scale(1.04);box-shadow:0 10px 26px rgba(0,0,0,.45)!important;outline:2px solid var(--accent)}
+
+/* S8-Kachel: beide Richtungen untereinander, volle Breite */
+#k-bahn{grid-column:1/-1}
+#k-bahn .val{display:grid;gap:6px;font-size:inherit}
+#k-bahn .s8r{display:grid;grid-template-columns:1fr auto auto;align-items:baseline;gap:4px 10px;padding:6px 8px;margin:0 -8px;border-radius:10px}
+#k-bahn .s8r span{font:600 15px/1.2 var(--f-body);color:var(--muted)}
+#k-bahn .s8r b{font:800 26px/1 var(--f-display)}
+#k-bahn .s8r em{font:700 14px var(--f-body);font-style:normal;color:var(--bad)}
+#k-bahn .s8r small{grid-column:1/-1;font:500 13px var(--f-body);color:var(--muted)}
+#k-bahn .s8r:active{background:color-mix(in srgb,var(--fg) 8%,transparent)}
+
+#headnav a.hn-s8{grid-column:1/-1;display:grid!important;grid-template-columns:1fr auto auto;align-items:baseline;column-gap:10px;row-gap:2px}
+#headnav a.hn-s8 .hn-l{grid-column:1/-1;margin-bottom:2px}
+#headnav a.hn-s8 .s8n{display:contents}
+#headnav a.hn-s8 .s8a{font:500 14px var(--f-body);opacity:.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#headnav a.hn-s8 b{font:800 20px/1.25 var(--f-display)}
+#headnav a.hn-s8 em{font:700 13px var(--f-body);font-style:normal;color:#ff8a7a;min-width:2.2em}
 </style>
 </head>
 <body>
@@ -1329,7 +1346,7 @@ header #headnav a.hn-bad,header #headnav a.hn-crit{border-color:color-mix(in srg
     <div role="button" tabindex="0" class="kpi tile" data-view="warnungen" id="k-warn"><div class="lbl">Warnungen</div><div class="val">–</div><div class="note">NINA &amp; DWD</div></div>
     <div role="button" tabindex="0" class="kpi tile" data-view="wetter" id="k-temp"><div class="lbl">Wetter</div><div class="val">–</div><div class="note">wird geladen</div></div>
     <div role="button" tabindex="0" class="kpi tile" data-view="staus" id="k-traffic"><div class="lbl">Reise &amp; Verkehr</div><div class="val">–</div><div class="note">Auto, Bahn, Bus, Parken</div></div>
-    <div role="button" tabindex="0" class="kpi tile" data-view="bahn" id="k-bahn"><div class="lbl">Bus &amp; Bahn</div><div class="val">–</div><div class="note">Abfahrten &amp; Verbindungen</div></div>
+    <div role="button" tabindex="0" class="kpi tile" data-view="bahn" id="k-bahn"><div class="lbl">S8 · nächste Bahn</div><div class="val">–</div><div class="note">Korschenbroich ⇄ Düsseldorf-Friedrichstadt</div></div>
     <div role="button" tabindex="0" class="kpi tile" data-view="einsaetze" id="k-ein" hidden><div class="lbl">Feuerwehreinsätze</div><div class="val">–</div><div class="note">Kreisleitstelle</div></div>
     <div role="button" tabindex="0" class="kpi tile" data-view="blaulicht" id="k-bl"><div class="lbl">Pressemitteilungen</div><div class="val">–</div><div class="note">Pressemeldungen</div></div>
     <div role="button" tabindex="0" class="kpi tile" data-view="luft" id="k-aq"><div class="lbl">Luft &amp; Pollen</div><div class="val">–</div><div class="note">&nbsp;</div></div>
@@ -1830,6 +1847,6 @@ header #headnav a.hn-bad,header #headnav a.hn-crit{border-color:color-mix(in srg
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
 <script src="config/meine-daten.js?v=1"></script>
-<script src="app.js?v=321"></script>
+<script src="app.js?v=323"></script>
 </body>
 </html>
