@@ -2458,8 +2458,8 @@ function buildViewbar(){
   const html=x=>x[1];const radio='<button type="button" class="hbtn hn-info hn-radio'+($("radio-list")&&!$("radio-list").hidden?" on":"")+'" data-radio-open aria-controls="radio-list"><span class="hn-l">Radio</span><span class="hn-v">'+esc((()=>{const o=document.querySelector("#radio .rbtn.on");return o?o.querySelector("b").textContent.trim()+" läuft":"Sonos · WDR 2 · weitere";})())+'</span></button>';
   const DOCS='<a class="hbtn hn-info hn-docs" href="'+esc(docsUrl())+'" data-docs><span class="hn-l">Einsatz-Dokumente</span><span class="hn-v">Ordner in Dateien</span></a>';
   const ST='<a class="hbtn hn-info hn-ships" href="#rhein" data-ships><span class="hn-l">Schiffe Rhein</span><span class="hn-v">Live-Karte · AIS</span></a>'+'<a class="hbtn hn-info hn-trains" href="https://travic.app/?z=12&x=739161&y=6657636" target="_blank" rel="noopener"><span class="hn-l">Züge live</span><span class="hn-v">Karte · Travic</span></a>';
-  hn.innerHTML=items.filter(x=>!FWV.includes(x[0])).map(html).join("")+radio+
-    '<div class="hn-fw"><div class="hn-fw-h">Feuerwehr Düsseldorf</div><div class="hn-fw-g">'+FWV.map(v=>(items.find(x=>x[0]===v)||[,""])[1]).join("")+ST+DOCS+'</div></div>';}}
+  hn.innerHTML='<div class="hn-fw"><div class="hn-fw-h">Feuerwehr Düsseldorf</div><div class="hn-fw-g">'+FWV.map(v=>(items.find(x=>x[0]===v)||[,""])[1]).join("")+ST+DOCS+'</div></div>'+
+    items.filter(x=>!FWV.includes(x[0])).map(html).join("")+radio;}}
   $("viewbar-links").innerHTML=[...document.querySelectorAll("#tiles .tile")].filter(t=>!t.hidden).map(t=>{const on=t.dataset.view===cur||(g&&groupOf(t.dataset.view)===g);return '<a href="#'+t.dataset.view+'" class="'+(on?"on":"")+'">'+esc(t.querySelector(".lbl").textContent)+'</a>';}).join("");
 }
 let ROUTEKEY=null;
