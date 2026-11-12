@@ -1798,6 +1798,11 @@ header #headnav a.hn-bad,header #headnav a.hn-crit{border-color:color-mix(in srg
       <span class="hint">Leer lassen = App direkt öffnen. Soll „Erinnerungen“ gleich eine neue Erinnerung anlegen, in der Kurzbefehle-App einen Kurzbefehl „Neue Erinnerung“ anlegen (Aktionen „Nach Eingabe fragen“ und „Erinnerung hinzufügen“) und hier eintragen: shortcuts://run-shortcut?name=Neue%20Erinnerung – wird nur auf diesem Gerät gespeichert.</span>
     </div>
     <div class="field">
+      <label for="docs-path">Ordner „Einsatzrelevante Dokumente“</label>
+      <div class="inline"><input id="docs-path" type="text" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" placeholder="iCloud Drive/Einsatzrelevante Dokumente"><button type="button" id="docs-save">Speichern</button></div><div id="docs-msg" class="small" aria-live="polite" style="margin-top:6px"></div>
+      <span class="hint">Pfad in iCloud Drive (z. B. „iCloud Drive/Feuerwehr/Einsatzrelevante Dokumente“) oder ein iCloud-Freigabelink. Leer = „iCloud Drive/Einsatzrelevante Dokumente“. Wird nur auf diesem Gerät gespeichert.</span>
+    </div>
+    <div class="field">
       <label for="fin">Link zur Finanztabelle (iCloud)</label>
       <div class="inline"><input id="fin" type="text" inputmode="url" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" placeholder="https://www.icloud.com/iclouddrive/…"><button type="button" id="fin-save">Speichern</button></div><div id="fin-msg" class="small" aria-live="polite" style="margin-top:6px"></div>
       <span class="hint">Einfachster Weg auf iPhone/iPad: Feld leer lassen und in der Kurzbefehle-App einen Kurzbefehl „Kontostand“ anlegen (Aktion „Datei“ → deine Finanztabelle wählen, darunter Aktion „Datei öffnen“). Der Knopf „Kontostand“ startet ihn dann. Alternativ hier einen Link oder Dateipfad eintragen – wird nur auf diesem Gerät gespeichert.</span>
@@ -1847,6 +1852,6 @@ header #headnav a.hn-bad,header #headnav a.hn-crit{border-color:color-mix(in srg
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
 <script src="config/meine-daten.js?v=1"></script>
-<script src="app.js?v=324"></script>
+<script src="app.js?v=325"></script>
 </body>
 </html>
