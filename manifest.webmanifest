@@ -1,7 +1,7 @@
 {
-  "name": "Lagebild Thomas Hußmann",
-  "short_name": "Lagebild",
-  "description": "Persönliches Lagebild für Düsseldorf aus offenen Schnittstellen",
+  "name": "Dashboard 2026",
+  "short_name": "Dashboard",
+  "description": "Persönliches Dashboard für Düsseldorf, Korschenbroich und Mönchengladbach",
   "lang": "de",
   "start_url": "./",
   "scope": "./",

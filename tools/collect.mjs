@@ -1,28 +1,22 @@
-// Lagebild Düsseldorf – Datensammler (© Thomas Hußmann)
+// Dashboard – Datensammler (Grundlage: Lagebild Düsseldorf von Thomas Hußmann)
 // Läuft alle 10 Minuten als GitHub Action und holt Quellen ab, die der Browser
 // wegen fehlender CORS-Freigabe nicht direkt abrufen darf. Ergebnis: data/*.json
 import fs from "node:fs/promises";
+import { readFileSync } from "node:fs";
 import path from "node:path";
+import vm from "node:vm";
 
 const OUT = process.argv[2] || "data";
-const LIVE = "https://thhussmann.github.io/Lagebild-D-sseldorf-/data/";
-const UA = { "User-Agent": "Lagebild-Duesseldorf/1.0 (privates Dashboard; github.com/THHUSSMANN)" };
+// Persönliche Angaben (Orte, Haltestellen, Pressemeldungen …) stehen in config/meine-daten.js
+const MD = (() => { const box = { window: {} }; vm.runInNewContext(require_text("../config/meine-daten.js"), box); return box.window.MEINE_DATEN || {}; })();
+function require_text(rel) { return readFileSync(new URL(rel, import.meta.url), "utf8"); }
+const LIVE = String(MD.adresse || "").replace(/\/?$/, "/") + "data/";
+const UA = { "User-Agent": "Lagebild-Dashboard/1.0 (privates Dashboard; github.com)" };
 
 const PLACES = {
   dus: { name: "Düsseldorf", lat: 51.2254, lon: 6.7763, ars: "051110000000", uR: 12,
-    feeds: [["Polizei & Feuerwehr Düsseldorf", "https://www.presseportal.de/rss/polizei/r/D%C3%BCsseldorf.rss2"]],
-    efa: "Düsseldorf Nikolaus-Knopp-Platz", db: "8000085" },
-  datteln: { name: "Datteln", lat: 51.6539, lon: 7.3417, ars: "055620000000", uR: 30,
-    feeds: [["Feuerwehr Datteln", "https://www.presseportal.de/rss/dienststelle_130639.rss2"], ["Blaulicht Datteln", "https://www.presseportal.de/rss/polizei/r/Datteln.rss2"]],
-    efa: "Datteln Busbahnhof" },
-  dortmund: { name: "Dortmund", lat: 51.5136, lon: 7.4653, ars: "059130000000", uR: 15,
-    feeds: [["Polizei & Feuerwehr Dortmund", "https://www.presseportal.de/rss/polizei/r/Dortmund.rss2"]],
-    efa: "Dortmund Hbf" },
-  alpen: { name: "Alpen-Menzelen", lat: 51.6449, lon: 6.5634, ars: "051700000000", uR: 30,
-    feeds: [["Alpen", "https://www.presseportal.de/rss/polizei/r/Alpen.rss2"], ["Xanten", "https://www.presseportal.de/rss/polizei/r/Xanten.rss2"], ["Rheinberg", "https://www.presseportal.de/rss/polizei/r/Rheinberg.rss2"]],
-    efa: "Alpen Bahnhof" },
-  salzhausen: { name: "Salzhausen", lat: 53.2236, lon: 10.1653, ars: "033530000000", uR: 30,
-    feeds: [["Blaulicht Salzhausen", "https://www.presseportal.de/rss/polizei/r/Salzhausen.rss2"]] }
+    feeds: (MD.duesseldorf && MD.duesseldorf.presse) || [], efa: (MD.duesseldorf && MD.duesseldorf.haltestelle) || "Düsseldorf Hbf", db: "8000085" },
+  ...Object.fromEntries((MD.orte || []).map(o => [o.key, { name: o.name, lat: o.lat, lon: o.lon, ars: o.ars, uR: 20, feeds: o.presse || [], efa: o.haltestelle || null }]))
 };
 
 const results = {};
@@ -64,7 +58,7 @@ function parseRss(xml, label) {
 }
 async function blaulicht(key, p) {
   const all = [];
-  for (const [label, url] of p.feeds) { try { all.push(...parseRss(await get(url, { type: "text" }), label).map(x => ({ ...x, ort: label }))); } catch (e) { if (p.feeds.length === 1) throw e; } await sleep(300); }
+  for (const [label, url, only] of p.feeds) { try { const re = only ? new RegExp(only, "i") : null; all.push(...parseRss(await get(url, { type: "text" }), label).filter(x => !re || re.test(x.title)).map(x => ({ ...x, ort: label }))); } catch (e) { if (p.feeds.length === 1) throw e; } await sleep(300); }
   const seen = new Set();
   return all.filter(x => !seen.has(x.link) && seen.add(x.link)).sort((a, b) => b.date.localeCompare(a.date)).slice(0, p.feeds.length > 2 ? 45 : 25);
 }
@@ -171,37 +165,18 @@ function places(j) {
   }).filter(Boolean);
 }
 
-// ---------- Feuerwehreinsätze Kreis Recklinghausen ----------
-async function kreisRe() {
-  const r = await fetch("https://www.kreis-re.de/inhalte/buergerservice/leben_und_wohnen/feuerwehr-_und_rettungsleitstelle/_einsaetze_der_feuerwehren/index.asp", { headers: UA });
-  if (!r.ok) throw new Error("HTTP " + r.status);
-  const buf = new Uint8Array(await r.arrayBuffer());
-  let html = new TextDecoder("utf-8").decode(buf);
-  if (/charset=(iso-8859-1|windows-1252)/i.test(r.headers.get("content-type") || "") || /<meta[^>]+charset=["']?(iso-8859-1|windows-1252)/i.test(html) || html.includes("\uFFFD")) html = new TextDecoder("windows-1252").decode(buf);
-  const cell = c => strip(c).replace(/\s+/g, " ").trim();
-  const rows = [...html.matchAll(/<tr[^>]*>([\s\S]*?)<\/tr>/gi)].map(m => [...m[1].matchAll(/<td[^>]*>([\s\S]*?)<\/td>/gi)].map(c => cell(c[1]))).filter(c => c.length >= 4 && /\d{2}:\d{2}:\d{2}/.test(c[0]))
-    .map(c => { const [t, d] = c[0].split(/\s+/); return { time: t, date: d || "", ort: c[1], strasse: c[2], stichwort: c[3], laufend: /^ja/i.test(c[4] || "") }; });
-  if (!rows.length) throw new Error("keine Einsätze in der Tabelle gefunden");
-  const updated = (strip(html).match(/Letzte Aktualisierung:?\s*([\d.: ]{10,20})/i) || [])[1] || "";
-  return { updated: updated.trim(), rows };
-}
-
 // ---------- Verbindungen (VRR-Fahrplanauskunft, inkl. DB-Fernverkehr) ----------
+// Kürzel: dus = Düsseldorf (Bahnhof aus config), kb = Korschenbroich, mg = Mönchengladbach
+const ORT = Object.fromEntries((MD.orte || []).map(o => [o.key, o]));
+const BHF = { dus: (MD.duesseldorf && MD.duesseldorf.bahnhof) || "Düsseldorf Hbf", kb: (ORT.korschenbroich || {}).bahnhof || "Korschenbroich", mg: (ORT.mgladbach || {}).bahnhof || "Mönchengladbach Hbf" };
 const TRIPS = [
-  ["dus-re", "Düsseldorf Hbf", "Recklinghausen Hbf"],
-  ["re-dus", "Recklinghausen Hbf", "Düsseldorf Hbf"],
-  ["dus-do", "Düsseldorf Hbf", "Dortmund Hbf"],
-  ["do-dus", "Dortmund Hbf", "Düsseldorf Hbf"],
-  ["re-do", "Recklinghausen Hbf", "Dortmund Hbf"],
-  ["do-re", "Dortmund Hbf", "Recklinghausen Hbf"],
-  // ÖPNV mit Bus & Bahn (alle Verkehrsmittel, auch mit Umstieg)
-  ["o-do-dat", "Dortmund Stadion", "Datteln Busbahnhof", true],
-  ["o-dat-do", "Datteln Busbahnhof", "Dortmund Hbf", true],
-  // Alpen-Menzelen und Salzhausen (Winsen/Luhe) – alle 30 Minuten neu, sonst letzter Stand
-  ...[["al", "Alpen Bahnhof"], ["wl", "Winsen(Luhe)"]].flatMap(([c, n]) => [["dus", "Düsseldorf Hbf"], ["re", "Recklinghausen Hbf"], ["do", "Dortmund Hbf"]]
-    .flatMap(([c2, n2]) => [[c + "-" + c2, n, n2, false, true], [c2 + "-" + c, n2, n, false, true]])),
-  ["al-wl", "Alpen Bahnhof", "Winsen(Luhe)", false, true],
-  ["wl-al", "Winsen(Luhe)", "Alpen Bahnhof", false, true]
+  ["kb-dus", BHF.kb, BHF.dus],
+  ["dus-kb", BHF.dus, BHF.kb],
+  // seltener gebraucht – alle 30 Minuten neu, sonst letzter Stand
+  ["mg-dus", BHF.mg, BHF.dus, false, true],
+  ["dus-mg", BHF.dus, BHF.mg, false, true],
+  ["kb-mg", BHF.kb, BHF.mg, false, true],
+  ["mg-kb", BHF.mg, BHF.kb, false, true]
 ];
 // Haltestellenname ohne Gleis; „Recklinghausen, Recklinghausen Hbf“ → „Recklinghausen Hbf“
 function stopName(x) {
@@ -244,8 +219,9 @@ async function trips() {
         return { trainsOnly: rideLegs.every(l => /^(ICE|IC|EC|ECE|RE|RB|S|RRX|NX|FLX|NJ|TGV|THA)\s?\d*/i.test(l.line) || /zug|bahn/i.test(l.name)), dep: (ride[0] || legs[0] || {}).dep, depEst: (ride[0] || legs[0] || {}).depEst, arr: (ride[ride.length - 1] || legs[legs.length - 1] || {}).arr, arrEst: (ride[ride.length - 1] || legs[legs.length - 1] || {}).arrEst, changes: Math.max(0, ride.length - 1), legs };
       });
       let fern = [];
-      if (!allModes) try { fern = await irisFern(from, to); } catch (e) { console.log("::warning::IRIS " + key + ": " + (e.message || e)); }
-      if (!allModes) try { const fc = await fernCombos(from, to); fern.push(...fc); } catch (e) { console.log("::warning::Fern+Umstieg " + key + ": " + (e.message || e)); }
+      const fernOk = /Hbf$/.test(from) && /Hbf$/.test(to); // Fernverkehr nur zwischen Hauptbahnhöfen
+      if (!allModes && fernOk) try { fern = await irisFern(from, to); } catch (e) { console.log("::warning::IRIS " + key + ": " + (e.message || e)); }
+      if (!allModes && fernOk) try { const fc = await fernCombos(from, to); fern.push(...fc); } catch (e) { console.log("::warning::Fern+Umstieg " + key + ": " + (e.message || e)); }
       const dur = j => (new Date(j.arrEst || j.arr) - new Date(j.depEst || j.dep)) / 6e4;
       const best = Math.min(...journeys.filter(j => j.arr && j.dep).map(dur), 999);
       journeys.push(...fern.filter(j => j.arr && j.dep && dur(j) > 0 && dur(j) <= Math.max(best + 30, 120)));
@@ -386,38 +362,7 @@ function efaPlace(k, p) { return (async () => {
     });
   })(); }
 tasks.push(job("nina-all.json", ninaAll));
-tasks.push(job("einsaetze-kreis-re.json", kreisRe));
 tasks.push(job("trips.json", trips));
-// BVB-Spielplan aus dem offiziellen Kalender-Abo (iCal über cal.to/Calovo, vom Nutzer bereitgestellt)
-tasks.push(job("bvbcal.json", async () => {
-  const URLS = ["https://i.cal.to/ical/3/borussiadortmund/bundesliga-spielplan/de/d20dad09.619990dc-68cb5b4d.ics",
-                "https://i.cal.to/ical/3/borussiadortmund/bundesliga-spielplan/de/d20dad09.619990dc-15b8d7b8.ics"]; // Bundesliga + Champions League
-  const raws = (await Promise.all(URLS.map(u => get(u, { type: "text" }).catch(() => "")))).filter(Boolean);
-  if (!raws.length) throw new Error("Kalender nicht erreichbar");
-  const raw = raws.join("\n");
-  const lines = raw.replace(/\r\n[ \t]/g, "").replace(/\n[ \t]/g, "").split(/\r?\n/);
-  const ev = []; let cur = null;
-  const unesc = s => (s || "").replace(/\\n/gi, "\n").replace(/\\,/g, ",").replace(/\;/g, ";").replace(/\\\\/g, "\\").trim();
-  const dt = (v, p) => { const m = /^(\d{4})(\d{2})(\d{2})(?:T(\d{2})(\d{2})(\d{2})?(Z)?)?/.exec(v || ""); if (!m) return null;
-    const iso = m[1] + "-" + m[2] + "-" + m[3] + "T" + (m[4] || "00") + ":" + (m[5] || "00") + ":" + (m[6] || "00");
-    return m[7] ? iso + "Z" : iso; /* ohne Z = Ortszeit (Europe/Berlin) */ };
-  for (const l of lines) {
-    if (l === "BEGIN:VEVENT") { cur = {}; continue; }
-    if (l === "END:VEVENT") { if (cur && cur.start) ev.push(cur); cur = null; continue; }
-    if (!cur) continue;
-    const i = l.indexOf(":"); if (i < 0) continue; const key = l.slice(0, i), val = l.slice(i + 1), name = key.split(";")[0];
-    if (name === "DTSTART") cur.start = dt(val);
-    else if (name === "SUMMARY") cur.summary = unesc(val);
-    else if (name === "LOCATION") cur.location = unesc(val);
-    else if (name === "DESCRIPTION") cur.desc = unesc(val).slice(0, 300);
-    else if (name === "CATEGORIES") cur.cat = unesc(val);
-  }
-  const now = Date.now() - 3 * 36e5;
-  const seen = new Set(); const uniq = ev.filter(e => { const k = e.start + "|" + (e.summary || ""); if (seen.has(k)) return false; seen.add(k); return true; });
-  const fut = uniq.filter(e => new Date(e.start).getTime() > now).sort((a, b) => a.start.localeCompare(b.start)).slice(0, 12);
-  if (!ev.length) throw new Error("keine Termine im Kalender");
-  return { events: fut, total: ev.length };
-}));
 // Flugzeuge über Düsseldorf (Ersatz, falls der Browser adsb.fi nicht direkt abfragen darf)
 tasks.push(job("flights.json", async () => {
   let d; try { d = await get("https://opendata.adsb.fi/api/v2/lat/51.2895/lon/6.7668/dist/16"); }
@@ -517,16 +462,9 @@ await job("medien.json", async () => {
   const WDR = ["https://www1.wdr.de/nachrichten/uebersicht-nachrichten-100.feed", "https://www1.wdr.de/nachrichten/index.feed", "https://www1.wdr.de/uebersicht-100.feed"];
   const F = {
     dus: [["Rheinische Post Düsseldorf", "https://rp-online.de/nrw/staedte/duesseldorf/feed.rss"], ["WDR", WDR], ["Westdeutsche Zeitung", ["https://www.wz.de/nrw/duesseldorf/feed.rss", "https://www.wz.de/feed.rss"]], ["Bild Düsseldorf", ["https://www.bild.de/feed/regional-duesseldorf.xml", "https://www.bild.de/feed/regional/duesseldorf.xml", "https://www.bild.de/rssfeeds/vw-duesseldorf/vw-duesseldorf-16786698,dzbildplus=true,sort=1,teaserbildmobil=false,view=rss2.bild.xml"]]],
-    dortmund: [["WDR", WDR], ["Ruhr Nachrichten", ["https://www.ruhrnachrichten.de/feed/", "https://www.ruhrnachrichten.de/rss"]]],
-    datteln: [["WDR", WDR], ["Ruhr Nachrichten", ["https://www.ruhrnachrichten.de/feed/", "https://www.ruhrnachrichten.de/rss"]], ["Recklinghäuser Zeitung", ["https://www.recklinghaeuser-zeitung.de/feed/"]], ["Bild Ruhrgebiet", ["https://www.bild.de/feed/regional-ruhrgebiet.xml", "https://www.bild.de/feed/regional/ruhrgebiet.xml", "https://www.bild.de/rssfeeds/vw-ruhrgebiet/vw-ruhrgebiet-16786752,dzbildplus=true,sort=1,teaserbildmobil=false,view=rss2.bild.xml"]]],
-    alpen: [["Rheinische Post Kreis Wesel", "https://rp-online.de/nrw/staedte/wesel/feed.rss"], ["RP Xanten", "https://rp-online.de/nrw/staedte/xanten/feed.rss"], ["RP Rheinberg", "https://rp-online.de/nrw/staedte/rheinberg/feed.rss"], ["RP Alpen", "https://rp-online.de/nrw/staedte/alpen/feed.rss"],
-      ["NRZ Wesel", ["https://www.nrz.de/lokales/wesel-hamminkeln-schermbeck/feed.rss", "https://www.nrz.de/lokales/wesel-hamminkeln-schermbeck/rss", "https://www.nrz.de/staedte/wesel-hamminkeln-schermbeck/feed.rss", "https://www.nrz.de/rss"]],
-      ["Niederrhein Nachrichten", ["https://www.niederrhein-nachrichten.de/feed/", "https://niederrhein-nachrichten.de/feed/", "https://www.nn-online.de/feed/"]],
-      ["Radio KW", ["https://www.radiokw.de/nachrichten/lokalnachrichten/index.rss", "https://www.radiokw.de/rss/lokalnachrichten.xml", "https://www.radiokw.de/feed/", "https://www.radiokw.de/rss"]], ["WDR", WDR]],
-    salzhausen: [["NDR Lüneburger Heide", ["https://www.ndr.de/nachrichten/niedersachsen/lueneburg_heide_unterelbe/index-rss.xml", "https://www.ndr.de/nachrichten/niedersachsen/lueneburg_heide_unterelbe/index~rss2.xml"]], ["NDR Niedersachsen", ["https://www.ndr.de/nachrichten/niedersachsen/index-rss.xml", "https://www.ndr.de/nachrichten/niedersachsen/index~rss2.xml", "https://www.ndr.de/home/index-rss.xml"]],
-      ["Kreiszeitung Wochenblatt", ["https://www.kreiszeitung-wochenblatt.de/feed/", "https://www.kreiszeitung-wochenblatt.de/rss", "https://www.kreiszeitung-wochenblatt.de/winsen/rss"]], ["Winsener Anzeiger", ["https://www.winsener-anzeiger.de/feed/", "https://www.winsener-anzeiger.de/rss"]],
-      ["Hamburger Abendblatt Harburg", ["https://www.abendblatt.de/hamburg/harburg/rss", "https://www.abendblatt.de/region/kreis-harburg/rss"]], ["Landeszeitung Lüneburg", ["https://www.landeszeitung.de/feed/", "https://www.landeszeitung.de/rss"]]]
-  };
+    korschenbroich: [["Rheinische Post Korschenbroich", ["https://rp-online.de/nrw/staedte/korschenbroich/feed.rss", "https://rp-online.de/nrw/staedte/neuss/feed.rss"]], ["NGZ Neuss", ["https://www.ngz-online.de/feed.rss", "https://rp-online.de/nrw/staedte/neuss/feed.rss"]], ["WDR", WDR]],
+    mgladbach: [["Rheinische Post Mönchengladbach", "https://rp-online.de/nrw/staedte/moenchengladbach/feed.rss"], ["WDR", WDR], ["Westdeutsche Zeitung", ["https://www.wz.de/nrw/moenchengladbach/feed.rss", "https://www.wz.de/feed.rss"]]]
+  };;
   const cache = {}; const out = {}; const stat = [];
   for (const [k, list] of Object.entries(F)) {
     const items = [];
@@ -624,7 +562,7 @@ try { results["osm-poi.json"] = await osmPoi(); } catch (e) { results["osm-poi.j
 console.log("::notice::OSM-Daten: " + results["osm-poi.json"]);
 // ---------- Push-Benachrichtigung (ntfy) bei neuen Warnungen in den Lieblingsstädten ----------
 async function pushAlarms() {
-  const topic = process.env.NTFY_TOPIC; if (!topic) return "kein Thema";
+  const topic = process.env.NTFY_TOPIC || MD.ntfy_thema; if (!topic) return "kein Thema";
   let prev = null; try { prev = (await get(LIVE + "push-state.json", { ms: 15000 })).data; } catch {}
   const sent = new Set((prev && prev.sent) || []); const now = [];const fresh = [];
   for (const [k, p] of Object.entries(PLACES)) {
@@ -639,14 +577,14 @@ async function pushAlarms() {
     try { await fetch("https://ntfy.sh/", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({
       topic, title: "⚠ " + w.p.name + ": " + w.title, message: (w.text || w.title).slice(0, 600) + "\n– " + w.src,
       priority: sev === "extreme" ? 5 : sev === "severe" ? 4 : 3, tags: ["warning"],
-      click: "https://thhussmann.github.io/Lagebild-D-sseldorf-/?ort=" + (w.k === "dus" ? "duesseldorf" : w.k) + "#warnungen" }) }); } catch (e) { console.log("::notice::Push fehlgeschlagen: " + e.message); }
+      click: LIVE.replace(/data\/$/, "") + "?ort=" + (w.k === "dus" ? "duesseldorf" : w.k) + "#warnungen" }) }); } catch (e) { console.log("::notice::Push fehlgeschlagen: " + e.message); }
   }
-  else await fetch("https://ntfy.sh/", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ topic, title: "Lagebild: Push eingerichtet", message: "Ab jetzt kommt hier eine Nachricht, sobald für Düsseldorf, Datteln, Alpen-Menzelen oder Salzhausen eine neue Warnung erscheint.", tags: ["white_check_mark"], click: "https://thhussmann.github.io/Lagebild-D-sseldorf-/" }) }).catch(() => {});
+  else await fetch("https://ntfy.sh/", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ topic, title: "Lagebild: Push eingerichtet", message: "Ab jetzt kommt hier eine Nachricht, sobald für " + Object.values(PLACES).map(p => p.name).join(", ") + " eine neue Warnung erscheint.", tags: ["white_check_mark"], click: LIVE.replace(/data\/$/, "") }) }).catch(() => {});
   await write("push-state.json", { sent: now.map(w => w.id) });
   console.log("::notice::Push: " + now.length + " aktive Warnungen, " + (prev ? fresh.length : 0) + " neu gemeldet");
   return "ok";
 }
 try { results["push"] = await pushAlarms(); } catch (e) { results["push"] = "Fehler: " + e.message; }
-console.log("::notice::Push-Ergebnis: " + results["push"] + " (Thema " + (process.env.NTFY_TOPIC ? "gesetzt" : "fehlt") + ")");
+console.log("::notice::Push-Ergebnis: " + results["push"] + " (Thema " + (process.env.NTFY_TOPIC || MD.ntfy_thema ? "gesetzt" : "fehlt") + ")");
 await write("status.json", results);
 console.log(JSON.stringify(results, null, 1));

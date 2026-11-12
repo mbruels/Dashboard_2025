@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Lagebild Thomas Hußmann</title>
+<title>Dashboard 2026</title>
 <meta name="description" content="Persönliches Lagebild für Düsseldorf aus offenen Schnittstellen">
 <meta name="theme-color" content="#0b6e8a">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -431,10 +431,10 @@ svg.chart text{fill:var(--muted);font:11px var(--f-body)}
 .cc-salzhausen,[data-fav="salzhausen"]{box-shadow:inset 3px 0 0 #c8102e,inset 6px 0 0 #f5c400,inset 9px 0 0 #c8102e}
 .cc-alpen.on,[data-fav="alpen"].on{background:linear-gradient(135deg,#ffe07a 0%,#f2b700 48%,#e07a10 72%,#c8102e 100%)!important;color:#2a1600!important;text-shadow:0 1px 0 rgba(255,255,255,.45);border:2px solid #fff3c4!important;box-shadow:0 6px 18px rgba(242,183,0,.45),inset 0 1px 0 rgba(255,255,255,.6)}
 .cc-salzhausen.on,[data-fav="salzhausen"].on{background:linear-gradient(90deg,#c8102e 0%,#d8302a 18%,#f5c400 36%,#f5c400 64%,#d8302a 82%,#c8102e 100%)!important;color:#2a0606!important;text-shadow:0 1px 0 rgba(255,255,255,.5);border:2px solid #fff!important;box-shadow:0 6px 18px rgba(200,16,46,.5),inset 0 1px 0 rgba(255,255,255,.6)}
-[data-fav="dortmund"]{box-shadow:inset 5px 0 0 var(--c-do)}
+[data-fav="mgladbach"]{box-shadow:inset 5px 0 0 var(--c-do)}
 
 .cc-alpen.on::before,.cc-salzhausen.on::before{content:"✓ ";font-weight:800}
-[data-fav="dortmund"].on{background:var(--c-do)!important;color:#111!important}
+[data-fav="mgladbach"].on{background:var(--c-do)!important;color:#111!important}
 #rs-city button{font-size:15px}
 .rs-quick{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}
 .rs-quick a{flex:1 1 40%;text-align:center;font:600 14px var(--f-body);padding:10px 8px;border-radius:8px;background:var(--accent);color:var(--panel);text-decoration:none}
@@ -467,14 +467,14 @@ header #headnav a.on{background:var(--accent);color:var(--panel);border-color:tr
 /* Stadtfarben: ruhig im Normalzustand (nur farbiger Streifen), deutlich wenn gewählt (Vollfarbe, dicker Rahmen, Häkchen) */
 :root{--c-dus:#d6001c;--c-do:#f2d600;--c-dat:#aeb3ba}
 .cc-dus,[data-fav="dus"],[data-pks="dus"],[data-mapgo="dus"]{box-shadow:inset 5px 0 0 var(--c-dus)}
-.cc-dortmund{box-shadow:inset 5px 0 0 var(--c-do)}
-.cc-datteln,[data-fav="datteln"],[data-pks="datteln"],[data-mapgo="datteln"]{box-shadow:inset 5px 0 0 var(--c-dat)}
+.cc-mgladbach{box-shadow:inset 5px 0 0 var(--c-do)}
+.cc-korschenbroich,[data-fav="korschenbroich"],[data-pks="korschenbroich"],[data-mapgo="korschenbroich"]{box-shadow:inset 5px 0 0 var(--c-dat)}
 [class*="cc-"]{padding-left:12px!important}
 .cc-dus.on,[data-fav="dus"].on,[data-pks="dus"].on,[data-mapgo="dus"].on{background:var(--c-dus)!important;color:#fff!important;border:3px solid #fff!important;box-shadow:0 0 0 2px var(--c-dus)}
-.cc-dortmund.on{background:var(--c-do)!important;color:#111!important;border:3px solid #111!important;box-shadow:0 0 0 2px var(--c-do)}
-.cc-datteln.on,[data-fav="datteln"].on,[data-pks="datteln"].on,[data-mapgo="datteln"].on{background:#151515!important;color:#fff!important;border:3px solid var(--c-dat)!important;box-shadow:0 0 0 2px #151515}
-:is(.cc-dus,.cc-dortmund,.cc-datteln).on::before,:is([data-fav],[data-pks],[data-mapgo]):is([data-fav="dus"],[data-fav="datteln"],[data-pks="dus"],[data-pks="datteln"],[data-mapgo="dus"],[data-mapgo="datteln"]).on::before{content:"✓ ";font-weight:800}
-a.cc-dus,a.cc-dortmund,a.cc-datteln{background:var(--panel-2)!important;color:var(--fg)!important;border:1px solid var(--line)}
+.cc-mgladbach.on{background:var(--c-do)!important;color:#111!important;border:3px solid #111!important;box-shadow:0 0 0 2px var(--c-do)}
+.cc-korschenbroich.on,[data-fav="korschenbroich"].on,[data-pks="korschenbroich"].on,[data-mapgo="korschenbroich"].on{background:#151515!important;color:#fff!important;border:3px solid var(--c-dat)!important;box-shadow:0 0 0 2px #151515}
+:is(.cc-dus,.cc-mgladbach,.cc-korschenbroich).on::before,:is([data-fav],[data-pks],[data-mapgo]):is([data-fav="dus"],[data-fav="korschenbroich"],[data-pks="dus"],[data-pks="korschenbroich"],[data-mapgo="dus"],[data-mapgo="korschenbroich"]).on::before{content:"✓ ";font-weight:800}
+a.cc-dus,a.cc-mgladbach,a.cc-korschenbroich{background:var(--panel-2)!important;color:var(--fg)!important;border:1px solid var(--line)}
 .carrow{display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:10px;padding:11px 12px;border-bottom:1px solid var(--line);color:var(--fg);text-decoration:none;min-height:48px}
 .carrow:last-of-type{border-bottom:0}
 .carrow .cn{font:700 16px var(--f-display)}
@@ -927,7 +927,7 @@ a.hbtn .hn-v{font-size:14px!important}.fl-th .fa-nr,.fa-nr{font-size:14px!import
 @media (max-width:420px){#rs-mode>*{font-size:13.5px!important}}
 /* Verkehrslage: eine gemeinsame Liste nach Entfernung, Quellen-Listen ausgeblendet */
 #vl-body :is(#vt-now,#sd-list,#tt,#stau-list,#traffic,#roadworks){display:none!important}
-#vl-body #mapcity-dus>h3.vl-h,#vl-body #mapcity-datteln,#vl-body #vl-tt,#vl-body #vl-ab{display:none!important}
+#vl-body #mapcity-dus>h3.vl-h,#vl-body #mapcity-korschenbroich,#vl-body #vl-tt,#vl-body #vl-ab{display:none!important}
 #vl-body[data-k="event"] #vl-all,#vl-body[data-k="next"] #vl-all{display:none!important}
 #vl-body[data-k="event"] #mapcity-dus,#vl-body[data-k="next"] #mapcity-dus{display:block!important}
 .vm-gh{display:flex;align-items:center;justify-content:space-between;margin:14px 2px 6px;font:700 15px var(--f-body);color:var(--fg)}.vm-gh .n{font:600 14px var(--f-body);color:var(--muted)}
@@ -1198,7 +1198,7 @@ header #headnav a.hn-bad,header #headnav a.hn-crit{border-color:color-mix(in srg
 <header class="top pad">
   <div class="wrap">
     <div class="brand">
-      <div class="titlerow"><h1 id="app-title">Lagebild Thomas Hußmann</h1><button id="refresh" type="button" class="refresh" aria-label="Aktualisieren" title="Aktualisieren"><svg class="mi" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4.5V11h-6.5"/></svg></button><span class="updmini" id="upd-mini"></span></div>
+      <div class="titlerow"><h1 id="app-title">Dashboard 2026</h1><button id="refresh" type="button" class="refresh" aria-label="Aktualisieren" title="Aktualisieren"><svg class="mi" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4.5V11h-6.5"/></svg></button><span class="updmini" id="upd-mini"></span></div>
       <div class="dt"><span class="clock" id="clock">--:--:--</span><span class="sub" id="sub"></span></div>
       <a class="warnpill wp-info" id="warnpill" href="#warnungen"><span class="wp-dot"></span><span class="wp-t">Warnungen</span><span class="wp-v" id="warnpill-v">…</span><span class="wp-go">›</span></a>
       <div class="qapps"><a class="qapp" id="qa-cal" href="weekcal://"><svg class="mi" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>WeekCal</a><a class="qapp" id="qa-rem" href="x-apple-reminderkit://"><svg class="mi" viewBox="0 0 24 24" aria-hidden="true"><circle cx="5.5" cy="7" r="1.6"/><circle cx="5.5" cy="12" r="1.6"/><circle cx="5.5" cy="17" r="1.6"/><path d="M10 7h10M10 12h10M10 17h10"/></svg>Erinnerungen</a></div>
@@ -1297,7 +1297,7 @@ header #headnav a.hn-bad,header #headnav a.hn-crit{border-color:color-mix(in srg
   <div class="al-form">
     <label>Uhrzeit <input type="time" id="al-time"></label>
     <label>Datum <input type="date" id="al-date"></label>
-    <label class="al-txt">Text <input type="text" id="al-text" placeholder="z. B. Zug nach Recklinghausen" maxlength="120"></label>
+    <label class="al-txt">Text <input type="text" id="al-text" placeholder="z. B. S8 nach Düsseldorf" maxlength="120"></label>
     <label class="al-chk"><input type="checkbox" id="al-push" checked> auch als Push aufs Handy (ntfy)</label>
     <button type="button" id="al-set" class="al-set">Wecker stellen</button>
   </div>
@@ -1336,7 +1336,6 @@ header #headnav a.hn-bad,header #headnav a.hn-crit{border-color:color-mix(in srg
     <div role="button" tabindex="0" class="kpi tile" data-view="webcams" id="k-cam"><div class="lbl">Webcams</div><div class="val">–</div><div class="note">Live-Bilder</div></div>
     <div role="button" tabindex="0" class="kpi tile" data-view="rhein" id="k-rhein"><div class="lbl" id="k-rhein-lbl">Pegel</div><div class="val">–</div><div class="note">&nbsp;</div></div>
     <div role="button" tabindex="0" class="kpi tile" data-view="alltag" id="k-strom"><div class="lbl">Kalender &amp; Events</div><div class="val">–</div><div class="note">Feiertage, Ferien, Events</div></div>
-    <div role="button" tabindex="0" class="kpi tile" data-view="fussball" id="k-fb"><div class="lbl">Fußball</div><div class="val">–</div><div class="note">Fortuna · BVB</div></div>
     <div role="button" tabindex="0" class="kpi tile" data-view="quellen" id="k-src"><div class="lbl">Schnittstellen</div><div class="val">–</div><div class="note">Status der Quellen</div></div>
     <div role="button" tabindex="0" class="kpi tile" data-view="einstellungen" id="k-set"><div class="lbl">Einstellungen</div><div class="val" style="font-size:22px">Orte &amp; mehr</div><div class="note">Haltestelle, Strecken, Schlüssel</div></div>
   </div>
@@ -1344,7 +1343,7 @@ header #headnav a.hn-bad,header #headnav a.hn-crit{border-color:color-mix(in srg
 
 <div class="view" id="v-warnungen" data-view="warnungen" hidden>
 <section class="card wide" id="warn-all">
-  <div class="card-head"><h2>Warnungen · alle fünf Orte</h2><span class="src">NINA · DWD · Ort antippen zeigt alle Einzelheiten</span></div>
+  <div class="card-head"><h2>Warnungen · alle meine Orte</h2><span class="src">NINA · DWD · Ort antippen zeigt alle Einzelheiten</span></div>
   <div id="warn-all-list"><div class="state">wird geladen …</div></div>
 </section>
 <section class="card wide" id="warnungen">
@@ -1414,10 +1413,10 @@ header #headnav a.hn-bad,header #headnav a.hn-crit{border-color:color-mix(in srg
   <div data-rsp="bahn" hidden>
   <div class="seg" id="rs-tdir"></div>
   <section class="card" id="trips-card">
-    <div class="card-head"><h2>Deutsche Bahn</h2><span class="src">Düsseldorf Hbf ⇄ Recklinghausen Hbf · Nah- und Fernverkehr · Echtzeit</span></div>
+    <div class="card-head"><h2>Deutsche Bahn</h2><span class="src">Korschenbroich ⇄ Düsseldorf-Friedrichstadt (S8) · Echtzeit</span></div>
     <div id="trips"><div class="state">wird geladen …</div></div>
     <form id="trip-form" class="settings" style="margin-top:6px">
-      <div class="field"><label for="trip-from">Von</label><input id="trip-from" type="text" autocomplete="off" placeholder="z. B. Düsseldorf-Heerdt"></div>
+      <div class="field"><label for="trip-from">Von</label><input id="trip-from" type="text" autocomplete="off" placeholder="z. B. Korschenbroich"></div>
       <div class="field"><label for="trip-to">Nach</label><input id="trip-to" type="text" autocomplete="off" placeholder="z. B. Köln Hbf"></div>
       <div class="field"><label>&nbsp;</label><div class="row" style="gap:8px"><button type="submit" id="trip-db">Bei bahn.de suchen</button><button type="button" id="trip-gm">Google Maps</button></div></div>
     </form>
@@ -1443,7 +1442,7 @@ header #headnav a.hn-bad,header #headnav a.hn-crit{border-color:color-mix(in srg
   </div>
   <div data-pane="karte" hidden>
   <div class="seg mapgo" id="mapgo" hidden>
-    <button type="button" data-mapgo="dus">Düsseldorf</button><button type="button" data-mapgo="datteln">Datteln</button>
+    <button type="button" data-mapgo="dus">Düsseldorf</button><button type="button" data-mapgo="korschenbroich">Korschenbroich</button>
   </div>
   <div class="muted small" id="mapgo-info" style="margin:-2px 0 8px"></div>
   <div id="vl-body" data-k="stau" class="flt">
@@ -1469,8 +1468,8 @@ header #headnav a.hn-bad,header #headnav a.hn-crit{border-color:color-mix(in srg
   <div data-vtp="events" hidden><div id="vt-events"><div class="state">wird geladen …</div></div></div>
   <div data-vtp="next" hidden><div id="vt-next"><div class="state">wird geladen …</div></div></div>
   </div>
-  <div id="mapcity-datteln" class="mapcity vl-sec" hidden>
-  <h3 class="sub2 vl-h">Stadt Datteln <span class="muted small">· TomTom, ca. 8 km Umkreis</span></h3>
+  <div id="mapcity-korschenbroich" class="mapcity vl-sec" hidden>
+  <h3 class="sub2 vl-h">Korschenbroich <span class="muted small">· TomTom, ca. 8 km Umkreis</span></h3>
   <div id="sd-list"><div class="state">wird geladen …</div></div>
   </div>
   <div class="vl-sec" id="vl-tt"><h3 class="sub2 vl-h">Alle Straßen <span class="muted small">· TomTom (live)</span></h3>
@@ -1498,7 +1497,7 @@ header #headnav a.hn-bad,header #headnav a.hn-crit{border-color:color-mix(in srg
 
 <div class="view" id="v-flaechen" data-view="flaechen" hidden>
 <section class="card wide fl">
-  <div class="card-head"><h2>Veranstaltungsflächen Düsseldorf</h2><span class="src">Flächen- und Personenberechnung nach SBauVO NRW · © Thomas Hußmann</span></div>
+  <div class="card-head"><h2>Veranstaltungsflächen Düsseldorf</h2><span class="src">Flächen- und Personenberechnung nach SBauVO NRW · Vorlage: Thomas Hußmann</span></div>
   <button type="button" class="btn sm fl-back" id="fl-back">‹ Alle Flächen</button>
   <div class="fl-ov">
   <div class="fl-sum" id="fl-sum" hidden></div>
@@ -1522,7 +1521,7 @@ header #headnav a.hn-bad,header #headnav a.hn-crit{border-color:color-mix(in srg
 </div>
 <div class="view" id="v-einsaetze" data-view="einsaetze" hidden>
 <section class="card wide" id="einsaetze-card">
-  <div class="card-head"><h2>Feuerwehreinsätze Datteln</h2><span class="src">Kreisleitstelle Recklinghausen · alle 10 Minuten</span></div>
+  <div class="card-head"><h2>Feuerwehreinsätze</h2><span class="src">nicht belegt</span></div>
   <div id="einsaetze"><div class="state">wird geladen …</div></div>
 </section>
 </div>
@@ -1680,9 +1679,9 @@ header #headnav a.hn-bad,header #headnav a.hn-crit{border-color:color-mix(in srg
   <div id="pk-city"><div class="state">wird geladen …</div></div>
 </section>
 </div>
-<div data-pk="datteln" hidden>
+<div data-pk="korschenbroich" hidden>
 <section class="card wide">
-  <div class="card-head"><h2>Parken in Datteln</h2><span class="src">OpenStreetMap · ca. 3 km um die Innenstadt</span></div>
+  <div class="card-head"><h2>Parken in Korschenbroich</h2><span class="src">OpenStreetMap · ca. 3 km um die Innenstadt</span></div>
   <div id="pk-dat"><div class="state">wird geladen …</div></div>
 </section>
 </div>
@@ -1762,7 +1761,7 @@ header #headnav a.hn-bad,header #headnav a.hn-crit{border-color:color-mix(in srg
     </div>
     <div class="field">
       <label for="stop" id="stop-lbl">Haltestelle für Abfahrten</label>
-      <div class="inline"><input id="stop" type="search" autocomplete="off" placeholder="Haltestelle eintippen, z. B. Nikolaus"><button type="button" id="stop-save">Übernehmen</button></div>
+      <div class="inline"><input id="stop" type="search" autocomplete="off" placeholder="Haltestelle eintippen, z. B. Friedrichstadt"><button type="button" id="stop-save">Übernehmen</button></div>
       <div id="stop-sug" class="stop-sug"></div>
       <span class="hint" id="stop-hint">Beim Tippen erscheinen alle Haltestellen des Orts zur Auswahl.</span>
     </div>
@@ -1825,11 +1824,12 @@ header #headnav a.hn-bad,header #headnav a.hn-crit{border-color:color-mix(in srg
 </section>
 </div>
 
-<footer class="ft-min">© Thomas Hußmann</footer>
+<footer class="ft-min" id="ft-name">© Michael Brüls</footer>
 </div>
 </main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-<script src="app.js?v=319"></script>
+<script src="config/meine-daten.js?v=1"></script>
+<script src="app.js?v=320"></script>
 </body>
 </html>

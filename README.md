@@ -1,7 +1,15 @@
-# Lagebild Düsseldorf
+# Dashboard 2026
 
-Persönliches Dashboard für Düsseldorf (Mitte und alle zehn Stadtbezirke) sowie frei wählbare Orte (Favoriten: Datteln, Alpen-Menzelen, Salzhausen) aus offenen Schnittstellen.
-Läuft komplett im Browser, ohne Server und ohne Anmeldung. © Thomas Hußmann
+Persönliches Dashboard von Michael Brüls für Düsseldorf (alle zehn Stadtbezirke, Standard: Bilk / Friedrichstadt), Korschenbroich und Mönchengladbach aus offenen Schnittstellen.
+Läuft komplett im Browser, ohne Server und ohne Anmeldung. Grundlage: „Lagebild Düsseldorf“ von Thomas Hußmann.
+
+## Eigene Daten ändern
+
+Alle persönlichen Angaben stehen in **`config/meine-daten.js`**: Titel, Name, Orte, Haltestellen, Pressemeldungen, Bahnstrecke, Ziel der Autofahrt, Autobahn-Strecken und das ntfy-Thema für Push-Nachrichten. Weitere Haltestellen stehen in `config/haltestellen.json`.
+
+Auf GitHub die Datei öffnen → Stift-Symbol → ändern → „Commit changes“. Nach dem nächsten Lauf des Datensammlers (höchstens 10 Minuten) ist alles aktiv.
+
+Schlüssel, die nur auf dem eigenen Gerät gespeichert werden (Dashboard → Einstellungen): TomTom (Verkehrslage, Karte, Fahrzeiten), Tankerkönig (Spritpreise), optional Windy (Webcams).
 
 ## Inhalte und Schnittstellen
 
@@ -16,7 +24,7 @@ Läuft komplett im Browser, ohne Server und ohne Anmeldung. © Thomas Hußmann
 | Rheinpegel | WSV – PEGELONLINE |
 | Stadtverkehr live (Verkehrsfluss, Sperrungen, Baustellen, Veranstaltungen), Parkhausbelegung | Verkehrszentrale Düsseldorf (vtmanager) |
 | P+R, Behindertenparkplätze, Defibrillatoren, Toiletten, Radstationen, Verkehrsüberwachung | Open Data Düsseldorf |
-| Polizei & Feuerwehr (Düsseldorf, Feuerwehr Datteln, regional) | Presseportal Blaulicht |
+| Feuerwehr Düsseldorf, Feuerwehr und Polizei Mönchengladbach, Polizei Rhein-Kreis Neuss | Presseportal Blaulicht |
 | Öffentliche Webcams (optional, eigener Schlüssel) | Windy Webcams API |
 | Staus mit Karte, Autobahn-Meldungen, Sperrungen, Baustellen, Webcams, E-Laden | Autobahn GmbH des Bundes |
 | Spritpreise (eigener kostenloser Schlüssel) | Tankerkönig |
@@ -29,7 +37,7 @@ Läuft komplett im Browser, ohne Server und ohne Anmeldung. © Thomas Hußmann
 
 ## Direktaufruf
 
-`?ort=duesseldorf` (Heerdt, Standard), `?ort=mitte`, `?ort=dus-3` (Bezirk 3), `?ort=duesseldorf`, `?ort=datteln`, `?ort=alpen`, `?ort=salzhausen`
+`?ort=duesseldorf`, `?ort=dus-3` (Bezirk 3), `?ort=korschenbroich`, `?ort=mgladbach`
 
 ## Auf iPhone und iPad
 
@@ -37,7 +45,7 @@ Adresse in Safari öffnen → Teilen → „Zum Home-Bildschirm“.
 
 ## Veröffentlichung
 
-GitHub Pages: Settings → Pages → Source „Deploy from a branch“ → Branch `main`, Ordner `/ (root)`.
+GitHub Pages: Settings → Pages → Source „GitHub Actions“.
 
 ## Datensammler
 

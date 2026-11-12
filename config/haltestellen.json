@@ -1,32 +1,15 @@
 {
-  "_hinweis": "Haltestellen, deren Abfahrten der Datensammler alle 10 Minuten abruft. Die erste ist der Standard des Orts.",
+  "_hinweis": "Haltestellen, deren Abfahrten der Datensammler alle 10 Minuten abruft. Die erste ist der Standard des Orts. Schlüssel (dus, korschenbroich, mgladbach) nicht ändern.",
   "dus": [
-    "Düsseldorf Nikolaus-Knopp-Platz"
+    "Düsseldorf Friedrichstadt",
+    "Düsseldorf Hbf"
   ],
-  "datteln": [
-    "Datteln Lohstr.",
-    "Datteln Busbahnhof"
+  "korschenbroich": [
+    "Korschenbroich Bf"
   ],
-  "alpen": [
-    "Alpen Bahnhof"
+  "mgladbach": [
+    "Mönchengladbach Hbf"
   ],
-  "_fahrten": {
-    "datteln": [
-      [
-        "Datteln Lohstr.",
-        "Datteln Busbahnhof"
-      ],
-      [
-        "Datteln Busbahnhof",
-        "Datteln Lohstr."
-      ]
-    ],
-    "dortmund": [
-      [
-        "Dortmund Stadion",
-        "Dortmund Hbf"
-      ]
-    ]
-  },
-  "_hinweis_fahrten": "Direkte Busfahrten von – nach je Ort (ohne Umstieg), z. B. Lohstr. → Busbahnhof."
+  "_fahrten": {},
+  "_hinweis_fahrten": "Direkte Busfahrten von – nach je Ort (ohne Umstieg), z. B. \"korschenbroich\": [[\"Korschenbroich Bf\", \"Korschenbroich Rathaus\"]]."
 }

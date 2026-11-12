@@ -1,10 +1,13 @@
-/* Lagebild Düsseldorf – © Thomas Hußmann
+/* Dashboard – Grundlage: „Lagebild Düsseldorf“ von Thomas Hußmann, angepasst für Michael Brüls.
+   Persönliche Angaben stehen in config/meine-daten.js.
    Ruft ausschließlich offene Schnittstellen direkt aus dem Browser ab.
    Düsseldorf (Mitte + 10 Stadtbezirke) plus frei wählbare Orte in ganz Deutschland. */
 (function(){
 "use strict";
 
 // ================= Orte =================
+const MD=window.MEINE_DATEN||{};const MD_DUS=MD.duesseldorf||{};const MD_TITEL=MD.titel||"Dashboard";
+const MD_BEZ=Math.min(10,Math.max(1,+MD_DUS.bezirk||1));const DUS_SEL="dus-"+MD_BEZ;
 const BEZIRKE=[
   {id:1,name:"Mitte",detail:"Altstadt, Carlstadt, Stadtmitte, Pempelfort",lat:51.2254,lon:6.7763},
   {id:2,name:"Flingern / Düsseltal",detail:"Flingern Nord/Süd, Düsseltal",lat:51.2310,lon:6.8040},
@@ -20,14 +23,9 @@ const BEZIRKE=[
 // Einzelne Stadtteile zusätzlich zu den Bezirken
 const STADTTEILE=[
 ];
-const DUS={lat:51.2254,lon:6.7763,ars:"051110000000",ab:["A3","A44","A46","A52","A57","A59","A524","A535"],efa:"Düsseldorf Nikolaus-Knopp-Platz"};
+const DUS={lat:51.2254,lon:6.7763,ars:"051110000000",ab:["A3","A44","A46","A52","A57","A59","A524","A535"],efa:MD_DUS.haltestelle||"Düsseldorf Hbf"};
 // Favoriten (Regionalschlüssel = Kreisebene für die NINA-Warn-App)
-const FAVS=[
-  {key:"datteln",name:"Datteln",detail:"Kreis Recklinghausen",lat:51.6539,lon:7.3417,state:"NW",ars:"055620000000",ab:["A2","A43","A45","A52"],efa:"Datteln Busbahnhof",pollen:/Tiefland/},
-  {key:"dortmund",name:"Dortmund",detail:"Kreisfreie Stadt",lat:51.5136,lon:7.4653,state:"NW",ars:"059130000000",ab:["A1","A2","A40","A44","A45"],efa:"Dortmund Hbf",pollen:/Tiefland/},
-  {key:"alpen",name:"Alpen-Menzelen",detail:"Kreis Wesel",lat:51.6449,lon:6.5634,state:"NW",ars:"051700000000",ab:["A57","A42","A3","A40"],efa:"Alpen Bahnhof",pollen:/Tiefland/},
-  {key:"salzhausen",name:"Salzhausen",detail:"Landkreis Harburg",lat:53.2236,lon:10.1653,state:"NI",ars:"033530000000",ab:["A7","A39","A1","A250"],efa:null,pollen:/Östl/}
-];
+const FAVS=(MD.orte||[]).map(o=>({key:o.key,name:o.name,detail:o.detail||"",lat:o.lat,lon:o.lon,state:o.state||"NW",ars:o.ars||null,ab:o.autobahnen||[],efa:o.haltestelle||null,pollen:/Tiefland/}));
 const STATES={"Baden-Württemberg":"BW","Bayern":"BY","Berlin":"BE","Brandenburg":"BB","Bremen":"HB","Hamburg":"HH","Hessen":"HE","Mecklenburg-Vorpommern":"MV","Niedersachsen":"NI","Nordrhein-Westfalen":"NW","Rheinland-Pfalz":"RP","Saarland":"SL","Sachsen":"SN","Sachsen-Anhalt":"ST","Schleswig-Holstein":"SH","Thüringen":"TH"};
 const STATE_NAME=Object.fromEntries(Object.entries(STATES).map(([a,b])=>[b,a]));
 const NEWS_REGION={BW:1,BY:2,BE:3,BB:4,HB:5,HH:6,HE:7,MV:8,NI:9,NW:10,RP:11,SL:12,SN:13,ST:14,SH:15,TH:16};
@@ -50,12 +48,12 @@ const SRC={
   efa:{name:"Rheinbahn & Bus vor Ort",prov:"Rheinbahn / Fahrplanauskunft",url:"https://www.rheinbahn.de/",ep:"Fahrplanauskunft (über Datensammler)"},
   bike:{name:"Leihräder",prov:"nextbike",url:"https://www.nextbike.de/",ep:"maps.nextbike.net/maps/nextbike-live.json"},
   vt:{name:"Stadtverkehr & Parkhäuser live",prov:"Verkehrszentrale Düsseldorf",url:"https://vtmanager.duesseldorf.de/info/",ep:"vtmanager.duesseldorf.de/geoserverwfs"},
-  trips:{name:"Deutsche Bahn Düsseldorf ⇄ Recklinghausen",prov:"Deutsche Bahn (IRIS) & Fahrplanauskunft",url:"https://www.bahn.de/",ep:"über Datensammler"},
+  trips:{name:"Deutsche Bahn Korschenbroich ⇄ Düsseldorf",prov:"Deutsche Bahn (IRIS) & Fahrplanauskunft",url:"https://www.bahn.de/",ep:"über Datensammler"},
   einsaetze:{name:"Feuerwehreinsätze Kreis Recklinghausen",prov:"Kreisleitstelle Recklinghausen",url:"https://www.kreis-re.de/inhalte/buergerservice/leben_und_wohnen/feuerwehr-_und_rettungsleitstelle/_einsaetze_der_feuerwehren/index.asp",ep:"kreis-re.de (über Datensammler)"},
   blaulicht:{name:"Polizei & Feuerwehr",prov:"Presseportal Blaulicht",url:"https://www.presseportal.de/blaulicht/",ep:"presseportal.de/rss (über Datensammler)"},
   park:{name:"P+R, Behindertenparkplätze, AED, WC, Radstationen",prov:"Open Data Düsseldorf",url:"https://opendata.duesseldorf.de/",ep:"opendata.duesseldorf.de (über Datensammler)"},
   windy:{name:"Öffentliche Webcams",prov:"Windy Webcams API",url:"https://api.windy.com/webcams",ep:"api.windy.com/webcams/api/v3"},
-  sammler:{name:"Datensammler (alle 10 Minuten)",prov:"GitHub Actions",url:"https://github.com/THHUSSMANN/Lagebild-D-sseldorf-/actions",ep:"data/*.json"},
+  sammler:{name:"Datensammler (alle 10 Minuten)",prov:"GitHub Actions",url:"https://github.com/mbruels/Dashboard_2025/actions",ep:"data/*.json"},
   hol:{name:"Feiertage",prov:"Nager.Date",url:"https://date.nager.at/Api",ep:"date.nager.at/api/v3"},
   school:{name:"Schulferien",prov:"OpenHolidays API",url:"https://www.openholidaysapi.org/",ep:"openholidaysapi.org/SchoolHolidays"},
   boerse:{name:"Börse: Indizes, Devisen, Rohstoffe",prov:"Yahoo Finance (verzögert)",url:"https://finance.yahoo.com/",ep:"query1.finance.yahoo.com (über Datensammler)"},
@@ -65,7 +63,7 @@ const SRC={
   pegelwv:{name:"Rhein-Vorhersage",prov:"WSV PEGELONLINE / BfG",url:"https://www.pegelonline.wsv.de/webservice/dokuRestapi",ep:"pegelonline.wsv.de …/WV/measurements.json"},
   ships:{name:"Schiffe (AIS-Karte)",prov:"VesselFinder (eingebettete Karte)",url:"https://www.vesselfinder.com/embed",ep:"vesselfinder.com/aismap.js"},
   flights:{name:"Flugzeuge über Düsseldorf",prov:"adsb.fi Open Data (über Datensammler)",url:"https://github.com/adsbfi/opendata",ep:"opendata.adsb.fi/api/v2/lat/…/lon/…/dist/…"},
-  fb:{name:"Fußball (Fortuna, BVB)",prov:"OpenLigaDB (frei, ohne Schlüssel)",url:"https://www.openligadb.de",ep:"api.openligadb.de/getmatchdata/…"},
+  fb:{name:"Fußball (ausgeblendet)",prov:"OpenLigaDB (frei, ohne Schlüssel)",url:"https://www.openligadb.de",ep:"api.openligadb.de/getmatchdata/…"},
   tm:{name:"Großveranstaltungen",prov:"Ticketmaster Discovery API (eigener Schlüssel)",url:"https://developer.ticketmaster.com/",ep:"app.ticketmaster.com/discovery/v2/events.json"}
 };
 const status={};
@@ -111,7 +109,7 @@ function errText(e){
   if(/\b429\b/.test(m))return "zu viele Abfragen in kurzer Zeit (HTTP 429)";
   return m;
 }
-const FAVKEYS=["dus","datteln","dortmund","alpen","salzhausen"];const EFAKEYS=[...FAVKEYS,"dortmund"];
+const FAVKEYS=["dus",...FAVS.map(f=>f.key)];const EFAKEYS=[...FAVKEYS];
 async function getData(name){
   const d=await getJSON("data/"+name+"?t="+Math.floor(Date.now()/60000),15000);
   if(!d||!("data" in d))throw new Error("Datei leer");
@@ -156,27 +154,29 @@ function bft(kmh){const t=[1,6,12,20,29,39,50,62,75,89,103,118];let b=0;while(b<
 
 // ================= Zustand =================
 let CUSTOM=load("custom")||[];
-let sel=String(load("sel")||"dus-4");
-if(sel==="dus-heerdt"){sel="dus-4";store("sel",sel);}
-if(!load("def_heerdt")){if(sel==="dus-1")sel="dus-4";store("def_heerdt",1);store("sel",sel);}
-// Direktaufruf z. B. für Kurzbefehle: ?ort=duesseldorf | dus-3 | datteln | alpen | salzhausen | <Name eines eigenen Orts>
+let sel=String(load("sel")||DUS_SEL);
+if(sel==="dus-heerdt"){sel=DUS_SEL;store("sel",sel);}
+if(!load("def_md")){sel=DUS_SEL;store("def_md",1);store("sel",sel);}
+// Direktaufruf z. B. für Kurzbefehle: ?ort=duesseldorf | dus-3 | korschenbroich | mgladbach | <Name eines eigenen Orts>
 (function(){try{const q=new URLSearchParams(location.search).get("ort");if(!q)return;const v=q.trim().toLowerCase();
-  if(/^(dus|duesseldorf|düsseldorf|heerdt|dus-heerdt|oberkassel)$/.test(v))sel="dus-4";
+  if(/^(dus|duesseldorf|düsseldorf|friedrichstadt)$/.test(v))sel=DUS_SEL;
   else if(v==="mitte")sel="dus-1";
   else if(/^dus-([1-9]|10)$/.test(v))sel=v;
   else if(STADTTEILE.some(t=>t.key===v||"dus-"+t.key===v))sel="dus-"+v.replace(/^dus-/,"");
   else{const p=[...FAVS,...CUSTOM].find(x=>x.key===v||x.name.toLowerCase()===v||x.name.toLowerCase().startsWith(v));if(p)sel="p-"+p.key;}
   store("sel",sel);}catch(e){}})();
 let EFAK=null;function ec(){return EFAK||C;}
-const EFACITY={dus:{key:"dus",isDus:true,efaDefault:"Düsseldorf Nikolaus-Knopp-Platz"},datteln:{key:"datteln",isDus:false,efaDefault:"Datteln Busbahnhof"},dortmund:{key:"dortmund",isDus:false,efaDefault:"Dortmund Hbf"},alpen:{key:"alpen",isDus:false,efaDefault:"Alpen Bahnhof"},salzhausen:{key:"salzhausen",isDus:false,efaDefault:null}};
+const EFACITY={dus:{key:"dus",isDus:true,efaDefault:DUS.efa},...Object.fromEntries(FAVS.map(f=>[f.key,{key:f.key,isDus:false,efaDefault:f.efa}]))};
 let STOPS=load("stops")||{};let DIRF=load("dirf")||{};let STOPIDX=null,EFADATA=null;
 if(STOPS.dus==="Düsseldorf Heinrich-Heine-Allee"){delete STOPS.dus;store("stops",STOPS);}
 let ABSEL=load("absel")||{};   // Autobahn-Auswahl je eigenem Ort
 let TK=load("tk")||"";
 let WINDY=load("windy")||"";let HOMES=load("homes")||{};
-// feste Adressen für die Fahrt Düsseldorf ⇄ Datteln
-const FIXHOME={dus:{label:"Alt-Heerdt 87, 40549 Düsseldorf",lat:51.22836,lon:6.72003},datteln:{label:"Helene-Weber-Straße 30, 45711 Datteln",lat:51.66456,lon:7.34258},dortmund:{label:"Blankensteiner Straße 5, 44137 Dortmund",lat:51.50286,lon:7.44386},alpen:{label:"Ringstraße 25, 46519 Alpen",lat:51.6167,lon:6.53155},salzhausen:{label:"Fliederweg 7, 21376 Salzhausen",lat:53.22205,lon:10.16865}};
-for(const k of ["dus","datteln"])if(!HOMES[k]||!isFinite(HOMES[k].lat))HOMES[k]={q:FIXHOME[k].label,...FIXHOME[k]};
+// Ziel der Autofahrt (ab aktuellem Standort) – aus config/meine-daten.js
+const MD_CAR=MD.autofahrt||{};
+// Start-/Zielpunkte für „Reise“: Ortsmitte (Düsseldorf: Standardbezirk)
+const FIXHOME={dus:{label:"Düsseldorf",lat:BEZIRKE[MD_BEZ-1].lat,lon:BEZIRKE[MD_BEZ-1].lon},...Object.fromEntries(FAVS.map(f=>[f.key,{label:f.name,lat:f.lat,lon:f.lon}]))};
+
 async function geocodeHome(key,q){const r=await getJSON("https://api.tomtom.com/search/2/geocode/"+encodeURIComponent(q)+".json?limit=1&countrySet=DE&language=de-DE&key="+encodeURIComponent(TTKEY));
   const x=(r.results||[])[0];if(!x)throw new Error("nicht gefunden");HOMES[key]={q,label:x.address.freeformAddress,lat:x.position.lat,lon:x.position.lon};store("homes",HOMES);return HOMES[key];}
 setTimeout(async()=>{const m=location.hash.match(/^#home=(.+)$/);if(!m)return;
@@ -184,13 +184,13 @@ setTimeout(async()=>{const m=location.hash.match(/^#home=(.+)$/);if(!m)return;
     for(const [k,q] of Object.entries(o)){try{const h=await geocodeHome(k,q);done.push(h.label);}catch(e){done.push(q+" (nicht gefunden)");}}
     history.replaceState(null,"",location.pathname+location.search);
     alert("Adressen auf diesem Gerät gespeichert:\n"+done.join("\n"));if(typeof loadTomTom==="function")loadTomTom();}catch(e){}},800);
-const TTKEY_DEFAULT="RSDptU00A2TYdT3fwL1oTHnKl6XOEf51";let TTKEY=load("tomtom")||TTKEY_DEFAULT;
-const ROUTES_DEFAULT="A52 Essen; A40 Duisburg; A57 Nimwegen; A2 Hannover";
+const TTKEY_DEFAULT="";let TTKEY=load("tomtom")||TTKEY_DEFAULT;
+const ROUTES_DEFAULT=(MD.strecken||{}).dus||"";
 // Strecken je Ort; die bisherige Liste gilt für Düsseldorf
 if(load("routes")!=null&&load("routes_dus")==null)store("routes_dus",load("routes"));
-const ROUTES_DEFAULTS={dus:ROUTES_DEFAULT,datteln:"A2 Oberhausen; A43 Wuppertal; A52 Düsseldorf; A2 Hannover; A43 Münster"};
+const ROUTES_DEFAULTS={...(MD.strecken||{})};
 const routesFor=k=>load("routes_"+k)??(ROUTES_DEFAULTS[k]||"");
-let ROUTES_TXT=routesFor(String(load("sel")||"dus-4").startsWith("dus-")?"dus":String(load("sel")).replace(/^p-/,""));
+let ROUTES_TXT=routesFor(String(load("sel")||DUS_SEL).startsWith("dus-")?"dus":String(load("sel")).replace(/^p-/,""));
 function parseRoutes(t){return String(t||"").split(/[;\n]+/).map(x=>x.trim()).filter(Boolean).map(x=>{const m=x.match(/^A?\s*(\d{1,3})\s*(?:Richtung|Ri\.|→|->|>|nach)?\s*(.+)$/i);return m?{ab:"A"+m[1],dir:m[2].trim()}:null;}).filter(Boolean);}
 let ROUTES=parseRoutes(ROUTES_TXT);
 let WX=null,AQ=null,HOL=null,SCHOOL=null,PARK=load("park")||{},BIKE=null,OBS=null;
@@ -227,14 +227,14 @@ function buildSelect(){
   allPlaces().forEach(p=>{const o=document.createElement("option");o.value="p-"+p.key;o.textContent=p.name;g2.appendChild(o);});
   const add=document.createElement("option");add.value="__add";add.textContent="+ Ort hinzufügen …";g2.appendChild(add);
   selEl.appendChild(g2);
-  selEl.value=sel;if(selEl.value!==sel){sel="dus-4";selEl.value=sel;}
+  selEl.value=sel;if(selEl.value!==sel){sel=DUS_SEL;selEl.value=sel;}
 }
 buildSelect();
 // Rot blinkender Hinweis bei aktiven Warnungen – für alle Lieblingsstädte gleichzeitig
 let LOCAL_ALARM={n:0,title:""};const FAV_ALARM={};
 function setAlarm(n,title,all){LOCAL_ALARM={n,title:title||"",all:all||[]};if(FAVKEYS.includes(C.key))FAV_ALARM[C.key]={n,title:title||"",all:all||[],name:C.key==="dus"?"Düsseldorf":C.town};renderAlarm();}
 let ALARM_SIG="";
-function favPlaces(){return [{key:"dus",name:"Düsseldorf",lat:BEZIRKE[0].lat,lon:BEZIRKE[0].lon,sel:"dus-4"},...FAVS.map(f=>({key:f.key,name:f.name,lat:f.lat,lon:f.lon,sel:"p-"+f.key}))];}
+function favPlaces(){return [{key:"dus",name:"Düsseldorf",lat:BEZIRKE[0].lat,lon:BEZIRKE[0].lon,sel:DUS_SEL},...FAVS.map(f=>({key:f.key,name:f.name,lat:f.lat,lon:f.lon,sel:"p-"+f.key}))];}
 async function scanFavAlarms(){
   await Promise.all(favPlaces().map(async p=>{
     const titles=[];let ok=false;
@@ -273,7 +273,7 @@ function renderAlarm(){
 document.addEventListener("click",e=>{const a=e.target.closest("#headnav a.on[data-v]");if(!a||(typeof HEDIT!=="undefined"&&HEDIT))return;e.preventDefault();e.stopImmediatePropagation();history.pushState(null,"","#");route();window.scrollTo({top:0,behavior:"smooth"});},true);
 // Veranstaltung antippen → in der Verkehrslage-Karte zeigen
 document.addEventListener("click",e=>{const it=e.target.closest("#v-events [data-lat]");if(!it||e.target.closest("a,summary,details"))return;e.preventDefault();
-  const la=it.dataset.lat,lo=it.dataset.lon,ev=!!it.closest("#ev-list");if(!C.isDus)choose("dus-4");history.pushState(null,"","#staus/karte");route();
+  const la=it.dataset.lat,lo=it.dataset.lon,ev=!!it.closest("#ev-list");if(!C.isDus)choose(DUS_SEL);history.pushState(null,"","#staus/karte");route();
   setTimeout(()=>{setVL(ev?"event":"next");const t=document.querySelector('#'+(ev?"vt-events":"vt-next")+' [data-lat="'+la+'"][data-lon="'+lo+'"]');if(t)t.click();},700);});
 // Warnleiste antippen = Warnung gesehen (Blinken stoppt bis zur nächsten neuen Warnung)
 document.addEventListener("click",e=>{if(!e.target.closest("#warnpill"))return;if(ALARM_SIG){store("alarm_seen",ALARM_SIG);renderAlarm();}});
@@ -318,7 +318,7 @@ $("alarmbar").addEventListener("click",e=>{if(e.target.closest("[data-ack]")){st
 })();
 // ================= Wecker & Erinnerung =================
 (function(){
-  const NTFY_TOPIC="lagebild-thh-de66cb14565a";
+  const NTFY_TOPIC=MD.ntfy_thema||"";
   const dlg=$("alarm-dlg");let AC=null,beepT=null,ringing=null;
   const list=()=>load("alarms")||[];const save=l=>store("alarms",l);
   const hm=ts=>new Date(ts).toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"});
@@ -332,7 +332,7 @@ $("alarmbar").addEventListener("click",e=>{if(e.target.closest("[data-ack]")){st
   function ring(a){document.querySelectorAll("dialog[open]").forEach(d=>d.close());ringing=a;$("ring-t").textContent=a.text||"Wecker";$("ring-time").textContent=hm(a.at)+" Uhr";$("ring").hidden=false;unlockAudio();beep();clearInterval(beepT);beepT=setInterval(beep,1200);
     try{navigator.vibrate&&navigator.vibrate([400,200,400]);}catch(e){}
     document.title="⏰ "+(a.text||"Wecker");}
-  function stopRing(){clearInterval(beepT);$("ring").hidden=true;ringing=null;document.title="Lagebild Thomas Hußmann · "+C.town;}
+  function stopRing(){clearInterval(beepT);$("ring").hidden=true;ringing=null;document.title=MD_TITEL+" · "+C.town;}
   setInterval(()=>{if(ringing)return;const now=Date.now();const l=list();const due=l.find(a=>a.at<=now&&!a.done&&now-a.at<10*60000);
     if(due){due.done=true;save(l);ring(due);render();}},1000);
   async function add(at,text,push){
@@ -497,7 +497,7 @@ document.addEventListener("click",e=>{const b=e.target.closest(".tabseg [data-t]
 document.querySelectorAll(".tabseg[data-tabs]").forEach(s=>{const v=load("tab_"+s.dataset.tabs);if(v)tabSet(s.dataset.tabs,v);});
 /* Fußball: nächste Spiele von Fortuna Düsseldorf und Borussia Dortmund (OpenLigaDB, frei, ohne Schlüssel) */
 const FB=[{k:"f95",name:"Fortuna Düsseldorf",short:"F95"},{k:"bvb",name:"Borussia Dortmund",short:"BVB"}];
-async function loadFussball(){const y=new Date().getFullYear(),season=new Date().getMonth()>=6?y:y-1;
+async function loadFussball(){return;const y=new Date().getFullYear(),season=new Date().getMonth()>=6?y:y-1;
   const leagues=[["bl1","Bundesliga"],["bl2","2. Bundesliga"],["dfb","DFB-Pokal"]];let all=[];
   // Champions League (und Pokal, falls anders benannt) automatisch in der OpenLigaDB-Ligaliste suchen
   try{const av=await getJSON("https://api.openligadb.de/getavailableleagues");(av||[]).filter(l=>String(l.leagueSeason)===String(season)&&/champions\s*league|uefa\s*cl|dfb[\s-]*pokal/i.test(l.leagueName||"")&&!/frauen|women|youth|u19|jugend/i.test(l.leagueName||"")).forEach(l=>{if(!leagues.some(x=>x[0]===l.leagueShortcut))leagues.push([l.leagueShortcut,/champions/i.test(l.leagueName)?"Champions League":"DFB-Pokal"]);});}catch(e){}
@@ -561,7 +561,7 @@ setInterval(()=>{const on=document.querySelector("#radio .rbtn.on");const t=on?"
 $("radio-audio").addEventListener("error",()=>document.querySelectorAll("#radio .rbtn").forEach(x=>x.classList.remove("on","load")));
 // Schnellwahl der Lieblingsstädte im Kopf
 function buildFavs(){
-  const dusSub=C.isDus?(C.short||""):"Oberkassel / Heerdt";
+  const dusSub=C.isDus?(C.short||""):BEZIRKE[MD_BEZ-1].name;
   const items=[["dus","Düsseldorf",dusSub],...FAVS.map(f=>[f.key,f.name,""])];
   setTimeout(renderAlarm,0);
   const pick=document.querySelector("header .pick");if(pick&&selEl.parentNode!==pick)pick.appendChild(selEl);
@@ -570,7 +570,7 @@ function buildFavs(){
   const d=document.querySelector('#favs [data-fav="dus"].hasPick');if(d)d.appendChild(selEl);
 }
 $("favs").addEventListener("click",e=>{const b=e.target.closest("[data-fav]");if(!b)return;const k=b.dataset.fav;
-  if(k==="dus"){if(!C.isDus)choose("dus-4");}else if(C.key!==k)choose("p-"+k);});
+  if(k==="dus"){if(!C.isDus)choose(DUS_SEL);}else if(C.key!==k)choose("p-"+k);});
 selEl.addEventListener("change",()=>{
   if(selEl.value==="__add"){selEl.value=sel;location.hash="einstellungen";setTimeout(()=>$("place-q").focus(),300);return;}
   choose(selEl.value);
@@ -598,16 +598,16 @@ function applyPlaceUi(){
   ROUTES_TXT=routesFor(C.key);ROUTES=parseRoutes(ROUTES_TXT);$("routes").value=ROUTES_TXT;
   $("routes-lbl").textContent="Meine Strecken für "+C.town+" (Priorität)";
   document.querySelectorAll("[data-dus]:not(.view)").forEach(el=>el.hidden=!C.isDus);
-  $("k-ein").hidden=C.key!=="datteln";
+  $("k-ein").hidden=true;
   $("k-bahn").dataset.view="bahn";
-  {const fav=C.isDus||C.key==="datteln";
+  {const fav=C.isDus||C.key==="korschenbroich";
     $("bahn").querySelector("h2").textContent=fav?"Bahn-Verbindungen":"Bahn-Verbindung suchen";
-    $("trip-from").value="";$("trip-to").value="";$("trip-from").placeholder=fav?"z. B. Düsseldorf-Heerdt":"Startbahnhof oder Adresse";$("trip-to").placeholder="Zielbahnhof oder Adresse";
+    $("trip-from").value="";$("trip-to").value="";$("trip-from").placeholder=fav?"z. B. Korschenbroich":"Startbahnhof oder Adresse";$("trip-to").placeholder="Zielbahnhof oder Adresse";
     if(!fav)setKpi("k-bahn","Suche<small> Bahn</small>","Verbindung suchen · Abfahrten vor Ort","info");}
-  $("app-title").textContent="Lagebild Thomas Hußmann";
+  $("app-title").textContent=MD_TITEL;{const f=$("ft-name");if(f&&MD.name)f.textContent="© "+MD.name;}
   $("wx-h").innerHTML="Wetter <strong>"+esc(C.name)+"</strong>";
   if(typeof route==="function")route();
-  document.title="Lagebild Thomas Hußmann · "+C.town;
+  document.title=MD_TITEL+" · "+C.town;
   $("warn-title").textContent="Einzelheiten: "+C.town+(C.isDus?"":" · "+(C.detail||""));
   $("gmaps").href=gmapsUrl();
   setStauTitle();
@@ -623,7 +623,7 @@ function applyPlaceUi(){
 
 // ================= Einstellungen & Ortssuche =================
 $("tk").value=TK;$("windy").value=WINDY;
-$("tomtom").value=TTKEY;$("tomtom").readOnly=true;$("tomtom-save").hidden=true;$("tomtom-hint").innerHTML="<b>✓ TomTom ist aktiv.</b> Der Schlüssel ist fest im Dashboard eingebaut und gilt automatisch auf allen Geräten – hier muss nichts mehr eingetragen oder gespeichert werden.";
+$("tomtom").value=TTKEY;$("tomtom").readOnly=false;$("tomtom-save").hidden=false;$("tomtom-hint").innerHTML=TTKEY?"<b>✓ TomTom ist aktiv.</b> Der Schlüssel ist auf diesem Gerät gespeichert.":"Für Verkehrslage, Karte und Fahrzeiten einen kostenlosen Schlüssel auf <a href=\"https://developer.tomtom.com/\" target=\"_blank\" rel=\"noopener\">developer.tomtom.com</a> anlegen und hier eintragen.";
 $("home-save").addEventListener("click",async()=>{const q=$("home-addr").value.trim();const key=C.key;
   if(!q){delete HOMES[key];store("homes",HOMES);$("home-hint").textContent="Adresse entfernt.";loadTomTom();return;}
   $("home-hint").textContent="Adresse wird gesucht …";
@@ -718,7 +718,7 @@ function renderMine(){
   box.querySelectorAll("[data-del]").forEach(b=>b.addEventListener("click",()=>{
     if(b.dataset.armed!=="1"){b.dataset.armed="1";b.textContent="Wirklich entfernen?";setTimeout(()=>{b.dataset.armed="";b.textContent="Entfernen";},4000);return;}
     const k=b.dataset.del;CUSTOM=CUSTOM.filter(p=>p.key!==k);delete ABSEL[k];store("custom",CUSTOM);store("absel",ABSEL);
-    buildSelect();if(sel==="p-"+k)choose("dus-4");else renderMine();}));
+    buildSelect();if(sel==="p-"+k)choose(DUS_SEL);else renderMine();}));
   box.querySelectorAll("[data-ab]").forEach(b=>b.addEventListener("click",()=>{const k=b.dataset.ab;
     const v=($("ab-"+k).value||"").toUpperCase().split(/[\s,;]+/).map(x=>x.replace(/^(\d)/,"A$1")).filter(x=>/^A\d{1,3}$/.test(x));
     ABSEL[k]=[...new Set(v)];store("absel",ABSEL);if(C.key===k){C=ctx();applyPlaceUi();loadAutobahn();}else renderMine();}));
@@ -1132,12 +1132,12 @@ function drawVTOnMap(){
 
 // ================= Polizei & Feuerwehr =================
 async function loadEinsaetze(){
-  const card=$("einsaetze-card");card.hidden=C.key!=="datteln";if(card.hidden)return;
+  const card=$("einsaetze-card");card.hidden=true;return; // Kreisleitstelle Recklinghausen gehört nicht zu diesem Dashboard
   try{const d=await getData("einsaetze-kreis-re.json");
     // nur die letzten 48 Stunden – laufende Einsätze bleiben immer sichtbar
     const ts=x=>{const m=String(x.date).match(/(\d{2})\.(\d{2})\.(\d{4})/);return m?new Date(m[3]+"-"+m[2]+"-"+m[1]+"T"+(x.time||"00:00:00")).getTime():Date.now();};
     const all=(d.data.rows||[]).filter(x=>x.laufend||Date.now()-ts(x)<=48*3600e3);
-    const here=all.filter(x=>/datteln/i.test(x.ort)),other=all.filter(x=>!/datteln/i.test(x.ort));
+    const here=all.filter(x=>/korschenbroich/i.test(x.ort)),other=all.filter(x=>!/korschenbroich/i.test(x.ort));
     const tbl=(rows)=>'<div class="ein-list">'+rows.map(x=>'<div class="ein'+(x.laufend?" run":"")+'"><div class="z"><b>'+esc(x.time.slice(0,5))+'</b><div class="muted small">'+esc(x.date.slice(0,6))+'</div></div><div class="s">'+esc(x.stichwort)+'</div>'+
       (x.laufend?'<span class="pill p-bad"><i></i>läuft</span>':'<span class="pill p-ok"><i></i>beendet</span>')+'<div class="o">'+esc(x.ort)+(x.strasse?' · '+esc(x.strasse):'')+'</div></div>').join("")+'</div>';
     const running=here.filter(x=>x.laufend).length;
@@ -1159,11 +1159,11 @@ function composeTile(id,group,main,cls){
   setKpi(id,parts._main||"–",notes.join(" · "),cl2);
 }
 // ================= Bahn-Verbindungen =================
-const TRIP_KEYS={dus:["dus-re","re-dus"],datteln:["re-dus","dus-re"]};
+const TRIP_KEYS={dus:["dus-kb","kb-dus"],korschenbroich:["kb-dus","dus-kb"],mgladbach:["mg-dus","dus-mg"]};
 // Bahnhöfe je Ort und Kürzel für die Bahnverbindungen
-const STN={dus:["dus","Düsseldorf Hbf"],datteln:["re","Recklinghausen Hbf"],dortmund:["do","Dortmund Hbf"],alpen:["al","Alpen"],salzhausen:["wl","Winsen (Luhe)"]};
-const CITYN={dus:"Düsseldorf",datteln:"Datteln",dortmund:"Dortmund",alpen:"Alpen-Menzelen",salzhausen:"Salzhausen"};
-const CITYPAIRS=(()=>{const core=["dus","datteln","dortmund"],o=[];for(const a of core)for(const b of core)if(a!==b)o.push([a,b]);for(const x of ["alpen","salzhausen"])for(const b of core){o.push([x,b]);o.push([b,x]);}o.push(["alpen","salzhausen"],["salzhausen","alpen"]);return o;})();
+const STN={dus:["dus",MD_DUS.bahnhof||"Düsseldorf Hbf"],korschenbroich:["kb","Korschenbroich"],mgladbach:["mg","Mönchengladbach Hbf"]};
+const CITYN={dus:"Düsseldorf",...Object.fromEntries(FAVS.map(f=>[f.key,f.name]))};
+const CITYPAIRS=(()=>{const core=["dus","korschenbroich","mgladbach"],o=[];for(const a of core)for(const b of core)if(a!==b)o.push([a,b]);return o;})();
 const RSTRIP=Object.fromEntries(CITYPAIRS.map(([a,b])=>[a+">"+b,STN[a][0]+"-"+STN[b][0]]));
 async function loadTrips(opt){opt=opt||{};
   const keys=opt.keys||(typeof RS!=="undefined"&&RS.tdir?[RSTRIP[RS.tdir]]:(TRIP_KEYS[C.key]||[]));const box=opt.box||$("trips");
@@ -1174,11 +1174,11 @@ async function loadTrips(opt){opt=opt||{};
     const del=(p,e)=>{if(!p||!e)return"";const m=Math.round((new Date(e)-new Date(p))/6e4);return m>0?' <span style="color:var(--bad);font-weight:600">+'+m+'</span>':"";};
     const now=Date.now()-60e3;
     if(!opt.box){const first=k=>{const t=list.find(x=>x.key===k);const j=t&&(t.journeys||[]).find(j=>new Date(j.depEst||j.dep).getTime()>=now);return j;};
-      const k1=C.isDus?"dus-re":"re-dus",j=first(k1);
+      const k1=(TRIP_KEYS[C.key]||TRIP_KEYS.dus)[0],j=first(k1);
       if(j){const m=j.depEst&&j.dep?Math.round((new Date(j.depEst)-new Date(j.dep))/6e4):0;
-        TILE_PARTS.mobil.bahn=(C.isDus?"Bahn nach Recklinghausen":"Bahn nach Düsseldorf")+" an "+hhmm(j.arrEst||j.arr);
+        TILE_PARTS.mobil.bahn=(C.isDus?"Bahn nach Korschenbroich":"Bahn nach Düsseldorf")+" an "+hhmm(j.arrEst||j.arr);
         composeTile("k-bahn","mobil",hhmm(j.dep)+(m>0?'<small style="color:var(--bad)"> +'+m+'</small>':"")+"<small> "+esc((j.legs.find(l=>!l.walk)||{}).line||"")+"</small>",m>=10?"warn":"info");
-        if(false)setKpi("k-bahn",hhmm(j.dep)+(m>0?'<small style="color:var(--bad)"> +'+m+'</small>':"")+"<small> "+esc((j.legs.find(l=>!l.walk)||{}).line||"")+"</small>",(C.isDus?"nach Recklinghausen":"nach Düsseldorf")+" · an "+hhmm(j.arrEst||j.arr)+" · "+j.changes+" Umst.",m>=10?"warn":"info");}
+        if(false)setKpi("k-bahn",hhmm(j.dep)+(m>0?'<small style="color:var(--bad)"> +'+m+'</small>':"")+"<small> "+esc((j.legs.find(l=>!l.walk)||{}).line||"")+"</small>",(C.isDus?"nach Korschenbroich":"nach Düsseldorf")+" · an "+hhmm(j.arrEst||j.arr)+" · "+j.changes+" Umst.",m>=10?"warn":"info");}
       else{TILE_PARTS.mobil.bahn="keine Bahn im abgerufenen Zeitraum";composeTile("k-bahn","mobil");}}
     box.innerHTML=list.map(t=>{
       const js=(t.journeys||[]).filter(j=>new Date(j.depEst||j.dep).getTime()>=now);
@@ -1249,16 +1249,7 @@ const WEBCAM_LINKS={
     {t:"Flughafen · Rollweg",hls:"https://stream-5gw.1000eyes.de/cupertino/dus1ba9.stream/playlist.m3u8",u:"https://www.dus.com/de-de/erleben/webcams",by:"Flughafen Düsseldorf"},
     {t:"Flughafen · Abfertigung",hls:"https://stream-5gw.1000eyes.de/cupertino/dus5abb.stream/playlist.m3u8",u:"https://www.dus.com/de-de/erleben/webcams",by:"Flughafen Düsseldorf"},
     {t:"Stadtwerke · Lausward",off:"liefert derzeit kein Bild",u:"https://www.swd-ag.de/ueber-uns/erzeugung-standorte/webcam/",by:"Stadtwerke Düsseldorf"},
-    {t:"Unterbacher See · West",img:"https://unterbachersee.de/wp-content/uploads/webcam-west.jpg",u:"https://unterbachersee.de/webcam/",by:"Unterbacher See · Bild alle paar Minuten neu"}],
-  datteln:[
-    {t:"Haltern am See · Marktplatz (ca. 15 km)",u:"https://www.windfinder.com/webcams/datteln"},
-    {t:"Dortmund · Hansaplatz (ca. 18 km)",u:"https://www.windfinder.com/webcams/datteln"},
-    {t:"Dortmund · Phoenixsee (ca. 22 km)",u:"https://www.windfinder.com/webcams/datteln"}],
-  alpen:[
-    {t:"Rhein bei Rees · Promenade (ca. 20 km)",u:"https://www.webcamtaxi.com/en/germany/north-rhine-westphalia/rhine-river-rees-cam.html"}],
-  salzhausen:[
-    {t:"Webcams Lüneburger Heide (Karte)",u:"https://www.tourispo.de/webcams-ausflugsziele/lueneburger-heide"},
-    {t:"Embsen / Lüneburg (ca. 20 km)",u:"https://www.windfinder.com/webcams/embsen_lower_saxony_germany"}]
+    {t:"Unterbacher See · West",img:"https://unterbachersee.de/wp-content/uploads/webcam-west.jpg",u:"https://unterbachersee.de/webcam/",by:"Unterbacher See · Bild alle paar Minuten neu"}]
 };
 const CAM_N={links:0,img:0,pub:0,ab:0};
 function camTile(){const n=CAM_N.img+CAM_N.pub+CAM_N.ab;setKpi("k-cam",n?String(n)+"<small> Livebilder</small>":String(CAM_N.links)+"<small> Links</small>",n?"Kamerabilder "+C.town:CAM_N.links?"Webcams in der Umgebung":"keine Webcams hinterlegt","info");}
@@ -1436,7 +1427,7 @@ document.addEventListener("click",e=>{const f=e.target.closest("#tt [data-ttf]")
     if(MAP._ttinc)MAP._ttinc.eachLayer(l=>{if(l.getPopup&&l.getPopup()&&(l.getLatLng?Math.abs(l.getLatLng().lat-x.lat)<1e-5:l.getLatLngs().flat().some(p=>Math.abs(p.lat-x.lat)<1e-5&&Math.abs(p.lng-x.lon)<1e-5)))l.openPopup([x.lat,x.lon]);});}});
 let MAPMODE="tomtom"; // OpenStreetMap-Ansicht entfernt – Karte immer TomTom (ohne Schlüssel automatisch einfache Grundkarte)
 // Fester Kartenausschnitt je Ort: [Süd, West, Nord, Ost]
-const MAP_BOUNDS={dus:[51.12,6.66,51.36,6.96],datteln:[51.60,7.24,51.72,7.46],alpen:[51.50,6.40,51.70,6.70],salzhausen:[53.15,10.04,53.30,10.30]};
+const MAP_BOUNDS={dus:[51.12,6.66,51.36,6.96],korschenbroich:[51.13,6.42,51.25,6.62],mgladbach:[51.08,6.32,51.28,6.56]};
 function mapBounds(){const b=MAP_BOUNDS[C.key];if(b)return b;const la=C.center.lat,lo=C.center.lon;return [la-.2,lo-.32,la+.2,lo+.32];}
 function gmapsUrl(){const [s,w,n,e]=mapBounds();const span=Math.max(n-s,(e-w)*0.62);const z=span>0.45?10:span>0.22?11:12;return "https://www.google.com/maps/@"+((s+n)/2).toFixed(4)+","+((w+e)/2).toFixed(4)+","+z+"z/data=!5m1!1e1";}
 let TTFLOW=load("ttflow2")!==false; // Verkehrsfluss (grün/gelb/rot auf allen Straßen) standardmäßig an
@@ -1465,27 +1456,30 @@ document.addEventListener("change",e=>{if(e.target.id==="ttflow"){TTFLOW=e.targe
 document.addEventListener("click",e=>{const b=e.target.closest("#mapsw [data-mm]");if(!b)return;
   if(b.dataset.mm==="tomtom"&&!TTKEY){location.hash="einstellungen";return;}
   MAPMODE=b.dataset.mm;store("mapmode",MAPMODE);applyMapMode();});
-// Autofahrt zwischen den eigenen Adressen in Düsseldorf und Datteln (Google Maps, mit aktueller Verkehrslage)
-function renderCarRoutes(){const box=$("car-routes");if(!box)return;CARR=[];const A=HOMES.dus,B=HOMES.datteln;
-  const wr=$("car-wrap");if(!(C.key==="dus"||C.key==="datteln")){if(wr)wr.hidden=true;return;}
+// Autofahrt vom aktuellen Standort zum festen Ziel (config/meine-daten.js) – Google Maps, Fahrzeit live über TomTom
+function carPos(){return new Promise((res,rej)=>{if(!navigator.geolocation)return rej(new Error("Standort nicht verfügbar"));
+  navigator.geolocation.getCurrentPosition(p=>res({lat:p.coords.latitude,lon:p.coords.longitude,label:"Mein Standort"}),()=>rej(new Error("Standort nicht freigegeben")),{enableHighAccuracy:false,timeout:10000,maximumAge:120000});});}
+function renderCarRoutes(){const box=$("car-routes");if(!box)return;CARR=[];
+  const wr=$("car-wrap"),Z=MD_CAR.ziel;if(!Z){if(wr)wr.hidden=true;return;}
   if(wr)wr.hidden=false;
-  if(!A||!B){box.innerHTML='<div class="muted small" style="grid-column:1/-1">Für die Autofahrt Düsseldorf ⇄ Datteln einmal den Einrichtungslink mit deinen Adressen öffnen (oder unter Einstellungen „Meine Adresse“ für beide Orte eintragen).</div>';return;}
-  const u=(o,d)=>"https://www.google.com/maps/dir/?api=1&travelmode=driving&origin="+encodeURIComponent(o.label)+"&destination="+encodeURIComponent(d.label);
-  const ab=[[A,B,"Düsseldorf → Datteln"],[B,A,"Datteln → Düsseldorf"]];if(C.key==="datteln")ab.reverse();
-  box.innerHTML=ab.map(([o,d,t],i)=>'<a class="carrow" target="_blank" rel="noopener" href="'+u(o,d)+'"><span class="cn">'+t+'<small id="cari-'+i+'">Autofahrt · Fahrzeit live</small></span><span class="ct" id="cart-'+i+'">…</span><span class="go">↗</span></a>').join("");
-  if(!TTKEY)return;
+  const t="Standort → "+(MD_CAR.kurz||Z);
+  const gm="https://www.google.com/maps/dir/?api=1&travelmode=driving&destination="+encodeURIComponent(Z);
+  box.innerHTML='<a class="carrow" target="_blank" rel="noopener" href="'+gm+'"><span class="cn">'+esc(t)+'<small id="cari-0">Autofahrt · Fahrzeit live</small></span><span class="ct" id="cart-0">'+(TTKEY?"…":"")+'</span><span class="go">↗</span></a>';
+  if(!TTKEY){$("cari-0").textContent="Route in Google Maps · Fahrzeit live mit TomTom-Schlüssel (Einstellungen)";return;}
   box.insertAdjacentHTML("beforeend",'<div id="car-incs" class="car-incs"></div>');
-  CARR=ab.map(([,,t])=>({t,wait:1}));renderCarIncs();
-  (async()=>{for(const [i,[o,d,t]] of ab.entries()){const el=$("cart-"+i);
-    try{const url="https://api.tomtom.com/routing/1/calculateRoute/"+o.lat+","+o.lon+":"+d.lat+","+d.lon+"/json?traffic=true&travelMode=car&routeType=fastest&computeTravelTimeFor=all&sectionType=traffic&instructionsType=coded&language=de-DE&key="+encodeURIComponent(TTKEY);
+  CARR=[{t,wait:1}];renderCarIncs();
+  (async()=>{const el=$("cart-0");
+    try{const d=(HOMES._ziel&&HOMES._ziel.q===Z&&isFinite(HOMES._ziel.lat))?HOMES._ziel:await geocodeHome("_ziel",Z);
+      const o=await carPos();
+      const url="https://api.tomtom.com/routing/1/calculateRoute/"+o.lat+","+o.lon+":"+d.lat+","+d.lon+"/json?traffic=true&travelMode=car&routeType=fastest&computeTravelTimeFor=all&sectionType=traffic&instructionsType=coded&language=de-DE&key="+encodeURIComponent(TTKEY);
       let r;try{r=await getJSON(url);}catch(e){await new Promise(z=>setTimeout(z,1500));r=await getJSON(url);}
       const rt=r.routes[0],sm=rt.summary;const min=Math.round(sm.travelTimeInSeconds/60),dl=Math.round((sm.trafficDelayInSeconds||0)/60),km=sm.lengthInMeters/1000;
       const arr=new Date(Date.now()+sm.travelTimeInSeconds*1000);
       el.innerHTML=(min>=60?Math.floor(min/60)+" h "+String(min%60).padStart(2,"0"):min)+' min '+(dl>0?'<span class="cs '+(dl>=15?"bad":"warn")+'">+'+dl+' Stau</span>':'<span class="cs ok">frei</span>');
-      {const ii=$("cari-"+i);if(ii)ii.textContent=fmt(km)+" km · Ankunft "+hhmm(arr);}
-      const P=routeParse(rt);CARR[i]={t,...P};renderCarIncs();carRW(i);
-    }catch(e){el.innerHTML='<span class="cs">–</span>';{const ii=$("cari-"+i);if(ii)ii.textContent="Fahrzeit derzeit nicht verfügbar";}CARR[i]={t,err:1};renderCarIncs();}
-    await new Promise(z=>setTimeout(z,400));}
+      {const ii=$("cari-0");if(ii)ii.textContent=fmt(km)+" km · Ankunft "+hhmm(arr);}
+      const P=routeParse(rt);CARR[0]={t,...P};renderCarIncs();carRW(0);
+    
+    }catch(e){el.innerHTML='<span class="cs">–</span>';{const ii=$("cari-0");if(ii)ii.textContent="Fahrzeit nicht verfügbar – "+errText(e);}CARR[0]={t,err:1};renderCarIncs();}
     for(const r of CARR)for(const x of (r.secs||[]))if(isFinite(x.lat)&&!x.ort){x.ort=await placeOf(x.lat,x.lon);renderCarIncs();}})();}
 let CARR=[],MAPFOCUS=0;const RWCACHE={};
 function routeParse(rt){const pts=(rt.legs||[]).flatMap(l=>l.points||[]);const ins=(rt.guidance&&rt.guidance.instructions)||[];
@@ -1803,7 +1797,7 @@ async function loadEFA(){const EK=ec().key;
   let stop=STOPS[ec().key]||ec().efaDefault;{const mm=stopMatch(stop);if(stop!==ec().efaDefault&&!mm.file){delete STOPS[ec().key];store("stops",STOPS);stop=ec().efaDefault;}}
   const m=stopMatch(stop);EFASTOP=stop;efaGo();
   const avail=(STOPIDX&&STOPIDX.available)||[];
-  $("efa-stops").innerHTML=avail.length>1?avail.map(a=>'<button type="button" data-stop="'+esc(a.name)+'" class="'+(m.file===a.file?"on":"")+'">'+esc(a.name.replace(/^(Düsseldorf|Datteln|Alpen),?\s*/,""))+'</button>').join(""):"";
+  $("efa-stops").innerHTML=avail.length>1?avail.map(a=>'<button type="button" data-stop="'+esc(a.name)+'" class="'+(m.file===a.file?"on":"")+'">'+esc(a.name.replace(/^(Düsseldorf|Korschenbroich|Mönchengladbach),?\s*/,""))+'</button>').join(""):"";
   $("efa-dir").value=DIRF[ec().key]||"";
   $("efa-title").textContent=(ec().isDus?"Rheinbahn · ":"Abfahrten ")+(m.name||stop).replace(/^Düsseldorf[, ]*/,"");
   $("efa-src").textContent=ec().isDus?"Bus, U- und Straßenbahn · Echtzeit":"Bus & Bahn vor Ort · Echtzeit";
@@ -1817,11 +1811,11 @@ function renderEFA(){const d=EFADATA;if(!d)return;
   const pairs=(BUSF||[]).filter(x=>x.key===ec().key);
   $("efa-dir").parentElement.hidden=pairs.length>0;$("efa-stops").hidden=false;
   if(pairs.length){const now=Date.now()-60e3;
-    const short=x=>x.replace(/^(Datteln|Dortmund),?\s*/,"").replace(/^Bus Bf$/,"Busbahnhof").replace(/^Lohstr\.$/,"Lohstraße");
+    const short=x=>x.replace(/^(Korschenbroich|Mönchengladbach|Düsseldorf),?\s*/,"");
     const nx=pairs.map(x=>({x,r:x.rows.filter(r=>new Date(r.depEst||r.dep).getTime()>=now)}));
     const f=nx[0]&&nx[0].r[0];
     if(f){TILE_PARTS.mobil.bus="Bus "+esc(f.line)+" "+hhmm(f.depEst||f.dep)+" "+short(nx[0].x.from)+" → "+short(nx[0].x.to);composeTile("k-bahn","mobil");}
-    $("efa-title").textContent=ec().key==="dortmund"?"Westfalenstadion → Hauptbahnhof":"Bus Lohstraße ⇄ Busbahnhof";
+    $("efa-title").textContent="Direktfahrten";
     const di=Math.min(+(load("busdir_"+ec().key)||0),nx.length-1);
     $("efa-stops").innerHTML=nx.map(({x},i)=>'<button type="button" data-bdir="'+i+'" class="'+(i===di?"on":"")+'">'+esc(short(x.from))+' → '+esc(short(x.to))+'</button>').join("");
     $("efa").innerHTML=nx.filter((_,i)=>i===di).map(({x,r})=>'<div class="sublbl">'+esc(short(x.from))+' → '+esc(short(x.to))+'</div>'+(r.length?'<div class="list" style="margin-bottom:12px">'+r.slice(0,6).map(r=>{const dm=r.depEst&&r.dep?Math.round((new Date(r.depEst)-new Date(r.dep))/6e4):0;
@@ -1833,8 +1827,8 @@ function renderEFA(){const d=EFADATA;if(!d)return;
   rows=rows.slice(0,14);
   EFASTOP=d.data.stop||"";efaGo();
   if(!rows.length){$("efa").innerHTML=busTripsHtml(d.data.stop)+stateBox(f?"Keine Linie fährt Richtung „"+esc(DIRF[ec().key])+"“. Für eine Verbindung mit Umsteigen den Knopf oben antippen.":"Keine weiteren Abfahrten im abgerufenen Zeitraum.");return;}
-  {const x=rows[0];TILE_PARTS.mobil.bus=esc(x.line)+" "+hhmm(x.est||x.planned)+" ab "+esc(d.data.stop.replace(/^(Düsseldorf|Datteln),?\s*/,""));
-    if(!(ec().isDus||ec().key==="datteln"))composeTile("k-bahn","mobil",hhmm(x.est||x.planned)+"<small> "+esc(x.line)+"</small>");else composeTile("k-bahn","mobil");}
+  {const x=rows[0];TILE_PARTS.mobil.bus=esc(x.line)+" "+hhmm(x.est||x.planned)+" ab "+esc(d.data.stop.replace(/^(Düsseldorf|Korschenbroich|Mönchengladbach),?\s*/,""));
+    if(!(ec().isDus||ec().key==="korschenbroich"))composeTile("k-bahn","mobil",hhmm(x.est||x.planned)+"<small> "+esc(x.line)+"</small>");else composeTile("k-bahn","mobil");}
   $("efa").innerHTML=busTripsHtml(d.data.stop)+'<div class="muted small">'+esc(d.data.stop)+' · alle Abfahrten · Echtzeit abgerufen '+dataAge(d)+'</div><div class="tbl-wrap">'+depTable(rows)+'</div>';
 }
 let BUSF=null;
@@ -1842,7 +1836,7 @@ function busTripsHtml(stop){if(!BUSF)return"";const n=normStop(stop);
   const t=BUSF.filter(x=>x.key===ec().key&&(normStop(x.from)===n||normStop(x.fromQ).endsWith(n)||n.endsWith(normStop(x.from))));
   const now=Date.now()-60e3;
   return t.map(x=>{const r=x.rows.filter(r=>new Date(r.depEst||r.dep).getTime()>=now).slice(0,5);
-    return '<div class="sublbl">Direkt nach '+esc(x.to.replace(/^Datteln,?\s*/,"").replace(/^Bus Bf$/,"Busbahnhof"))+'</div>'+(r.length?'<div class="list" style="margin-bottom:10px">'+r.map(r=>{const dm=r.depEst&&r.dep?Math.round((new Date(r.depEst)-new Date(r.dep))/6e4):0;
+    return '<div class="sublbl">Direkt nach '+esc(x.to.replace(/^(Korschenbroich|Mönchengladbach|Düsseldorf),?\s*/,""))+'</div>'+(r.length?'<div class="list" style="margin-bottom:10px">'+r.map(r=>{const dm=r.depEst&&r.dep?Math.round((new Date(r.depEst)-new Date(r.dep))/6e4):0;
       return '<div class="li"><span class="tag">'+esc(r.line)+'</span><div class="t"><b>'+hhmm(r.dep)+'</b>'+(dm>0?' <span style="color:var(--bad);font-weight:600">+'+dm+'</span>':'')+' → an '+hhmm(r.arrEst||r.arr)+'</div><div class="r muted small">'+(r.plat?'Steig '+esc(r.plat):'')+'</div><div class="d">Richtung '+esc(r.dir)+'</div></div>';}).join("")+'</div>':'<div class="muted small" style="margin-bottom:10px">Keine direkte Fahrt im abgerufenen Zeitraum.</div>');}).join("");}
 function depTable(rows){
   let r='<table><thead><tr><th>Zeit</th><th>Linie</th><th>Richtung</th><th class="num">Gleis/Steig</th><th class="num">+min</th></tr></thead><tbody>';
@@ -1898,7 +1892,7 @@ async function loadHol(){
   catch(e){setStatus("school",false,errText(e));}
   renderCal();loadFerien();
 }
-// Schulferien-Übersicht: NRW immer, dazu das Land des Orts (z. B. Niedersachsen für Salzhausen)
+// Schulferien-Übersicht: NRW immer, dazu das Land des Orts
 const FERIEN_CACHE={};
 async function loadFerien(){
   const y=new Date().getFullYear(),years=[y,y+1,y+2];
@@ -1996,7 +1990,7 @@ async function loadNews(){
   NEWSDATA={reg:prep(R),nat:prep(N)};renderNews();
 }
 function renderNews(){
-  const regName=C.isDus?"Düsseldorf & NRW":C.key==="salzhausen"?"Lüneburger Heide & Niedersachsen":C.town+" & "+(STATE_NAME[C.state]||"");
+  const regName=C.isDus?"Düsseldorf & NRW":C.town+" & "+(STATE_NAME[C.state]||"");
   $("news-title").textContent="Nachrichten";
   const items=NEWSDATA[NEWSMODE]||[];const srcs=[...new Set(items.map(x=>x.source))];
   const dt=x=>{if(!x)return"";const d=new Date(x);return d.toDateString()===new Date().toDateString()?hhmm(x):d.toLocaleDateString("de-DE",{day:"2-digit",month:"2-digit"})+" "+hhmm(x);};
@@ -2022,12 +2016,12 @@ function renderSources(){
 
 // ================= Ablauf =================
 let busy=false,lastSlow=0,slowKey="";
-// ================= Stadtverkehr Datteln (TomTom) =================
-const TOWNS={dus:{lat:51.2254,lon:6.7763,z:12,name:"Düsseldorf"},datteln:{lat:51.6539,lon:7.3417,z:13,name:"Datteln"},dortmund:{lat:51.5136,lon:7.4653,z:12,name:"Dortmund"},alpen:{lat:51.6,lon:6.52,z:12,name:"Alpen-Menzelen"},salzhausen:{lat:53.2231,lon:10.1658,z:12,name:"Salzhausen"}};
+// ================= Stadtverkehr Korschenbroich (TomTom) =================
+const TOWNS={dus:{lat:51.2254,lon:6.7763,z:12,name:"Düsseldorf"},...Object.fromEntries(FAVS.map(f=>[f.key,{lat:f.lat,lon:f.lon,z:13,name:f.name}]))};
 const homeOr=k=>HOMES[k]&&isFinite(HOMES[k].lat)?HOMES[k]:{...TOWNS[k],label:TOWNS[k].name};
 async function loadDatteln(){const box=$("sd-list");if(!box)return;
-  if(!TTKEY){box.innerHTML=stateBox("Für den Stadtverkehr Datteln unter Einstellungen den kostenlosen TomTom-Schlüssel eintragen.",'<a href="#einstellungen">Zu den Einstellungen</a>');return;}
-  const T=TOWNS.datteln,bbox=[T.lon-.12,T.lat-.075,T.lon+.12,T.lat+.075].map(x=>x.toFixed(4)).join(",");
+  if(!TTKEY){box.innerHTML=stateBox("Für den Stadtverkehr "+TOWNS.korschenbroich.name+" unter Einstellungen den kostenlosen TomTom-Schlüssel eintragen.",'<a href="#einstellungen">Zu den Einstellungen</a>');return;}
+  const T=TOWNS.korschenbroich,bbox=[T.lon-.12,T.lat-.075,T.lon+.12,T.lat+.075].map(x=>x.toFixed(4)).join(",");
   const fields="{incidents{type,geometry{type,coordinates},properties{iconCategory,magnitudeOfDelay,events{description},from,to,length,delay,roadNumbers}}}";
   const CAT={0:"Meldung",1:"Unfall",2:"Nebel",3:"Gefahr",4:"Regen",5:"Glätte",6:"Stau",7:"Fahrstreifen gesperrt",8:"Straße gesperrt",9:"Baustelle",10:"Wind",11:"Überflutung",14:"Liegengebliebenes Fahrzeug"};
   try{const d=await getJSON("https://api.tomtom.com/traffic/services/5/incidentDetails?key="+encodeURIComponent(TTKEY)+"&bbox="+bbox+"&language=de-DE&timeValidityFilter=present&fields="+encodeURIComponent(fields));
@@ -2042,15 +2036,15 @@ async function loadDatteln(){const box=$("sd-list");if(!box)return;
         '<div class="jam sdj" role="button" tabindex="0" data-kat="'+ttKat(x.cat)+'" data-lat="'+x.lat+'" data-lon="'+x.lon+'"><span class="tag'+(/^A\d/.test(x.road)?" ab":"")+'">'+esc(x.road||"Straße")+'</span><div class="t"><span class="pill '+(x.cat===8||x.mag>=3?"p-bad":"p-warn")+'" style="margin-right:6px"><i></i>'+esc(CAT[x.cat]||"Meldung")+'</span><b class="ortp"></b>'+(x.desc&&x.desc!==CAT[x.cat]?esc(x.desc):"")+'</div>'+
         '<div class="delay'+(x.delay>=20?"":x.delay>=10?" mid":" low")+'">'+(x.delay?"+"+x.delay+" min":"")+'<small>'+(x.delay?"Verzögerung":"")+'</small></div>'+
         '<div class="d">'+esc([x.from,x.to].filter(Boolean).join(" → "))+(x.len?" · "+fmt(x.len,1)+" km":"")+" · "+fmt(x.km,1)+' km vom Zentrum · <span style="color:var(--accent)">in Karte zeigen ›</span></div></div>').join(""):"";}).join("")
-      :'<div class="state good">Keine Staus, Sperrungen oder Baustellen in und um Datteln gemeldet.</div>';
+      :'<div class="state good">Keine Staus, Sperrungen oder Baustellen in und um '+esc(TOWNS.korschenbroich.name)+' gemeldet.</div>';
     fillOrte(box);
-  }catch(e){box.innerHTML=stateBox("Verkehrslage Datteln nicht verfügbar – "+errText(e)+".");}}
+  }catch(e){box.innerHTML=stateBox("Verkehrslage "+TOWNS.korschenbroich.name+" nicht verfügbar – "+errText(e)+".");}}
 document.addEventListener("click",e=>{const j=e.target.closest(".sdj");if(!j)return;const la=+j.dataset.lat,lo=+j.dataset.lon;if(!isFinite(la))return;
   MAPFOCUS=1;if(location.hash!=="#staus/karte")location.hash="staus/karte";setTimeout(()=>{if(!MAP)return;$("stau-map").scrollIntoView({behavior:"smooth",block:"center"});MAP.invalidateSize();MAP.setView([la,lo],14);L.popup().setLatLng([la,lo]).setContent([...j.querySelector(".t").childNodes].map(n=>n.textContent.trim()).filter(Boolean).join(" · ")+"<br>"+j.querySelector(".d").innerText.replace(" · in Karte zeigen ›","")).openOn(MAP);},250);});
 
 // ================= Karte: Orte und Strecken =================
 let MAPGO=null;
-// ================= Reise Düsseldorf ⇄ Datteln (TomTom mit Alternativrouten) =================
+// ================= Reise Düsseldorf ⇄ Korschenbroich (TomTom mit Alternativrouten) =================
 let RS={dir:null,data:{},sel:0,at:0,sv:{}},RSMAP=null,RSLAY=null;
 // Stabile Ampel je Strecke: Verschärfung sofort, Entwarnung erst nach 2 Bestätigungen (kein Flackern)
 function svUpd(k,a){const cl=(a.ab||[]).some(w=>w.cl);const lv=a.dl>=20?2:a.dl>=10?1:0;/* nur echte Verzögerung zählt, Sperrungen ohne Zeitverlust nicht */const s=RS.sv[k];
@@ -2059,10 +2053,10 @@ function svUpd(k,a){const cl=(a.ab||[]).some(w=>w.cl);const lv=a.dl>=20?2:a.dl>=
   s.n=(s.cand===lv?s.n:0)+1;s.cand=lv;if(s.n>=2)RS.sv[k]=mk();}
 const RSDIRS=CITYPAIRS.map(([a,b])=>[a+">"+b,CITYN[a]+" → "+CITYN[b],a,b]);
 function setStauTitle(){const el=$("stau-title");if(!el)return;const pane=(location.hash.split("/")[1]||"reise");
-  let mg=null;try{mg=MAPGO;}catch(e){}const mk=(mg==="dus"||mg==="datteln")?mg:(C.key==="datteln"?"datteln":"dus");el.textContent=pane==="reise"?"Reise ab "+((typeof RS!=="undefined"&&RS.gps&&RS.pos)?"Standort":(CITYN[(typeof RS!=="undefined"&&RS.city)||""]||C.town)):"Verkehrslage · "+(pane==="karte"?((TOWNS[mg]||{}).name||C.town):C.town);}
+  let mg=null;try{mg=MAPGO;}catch(e){}const mk=(mg==="dus"||mg==="korschenbroich")?mg:(C.key==="korschenbroich"?"korschenbroich":"dus");el.textContent=pane==="reise"?"Reise ab "+((typeof RS!=="undefined"&&RS.gps&&RS.pos)?"Standort":(CITYN[(typeof RS!=="undefined"&&RS.city)||""]||C.town)):"Verkehrslage · "+(pane==="karte"?((TOWNS[mg]||{}).name||C.town):C.town);}
 const IOS=/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
 // Nur ansehen (ohne Navigation): auf dem iPhone direkt die Routenübersicht der Google-Maps-App
-// App: exakte Koordinaten statt Adresstext (Google findet sonst z. B. Alpen-Menzelen/Salzhausen nicht sicher)
+// App: exakte Koordinaten statt Adresstext (Google findet kleine Orte sonst nicht immer sicher)
 const gmView=(o,d,via)=>{const A=isFinite(o.lat)?o.lat+","+o.lon:o.label,B=isFinite(d.lat)?d.lat+","+d.lon:d.label;
   return IOS?"comgooglemaps://?saddr="+encodeURIComponent(A)+"&daddr="+(via?via[0].toFixed(5)+","+via[1].toFixed(5)+"+to:":"")+encodeURIComponent(B)+"&directionsmode=driving":gmUrl(o,d,via);};
 // Uber: Abholung am aktuellen Standort, Ziel = Adresse der Fahrt
@@ -2113,7 +2107,7 @@ document.addEventListener("click",e=>{if(!e.target.closest("[data-rshome]"))retu
 document.addEventListener("click",e=>{const b=e.target.closest("[data-rscity]");if(!b)return;const k=b.dataset.rscity;if(RS.gps){RS.gps=false;store("rs_gps",false);RS.dir=null;}
   const y=window.scrollY;const keep=()=>{if(Math.abs(window.scrollY-y)>4)window.scrollTo(0,y);};
   EFAK=EFACITY[k];RS.city=k;RS.at=0;
-  RS.lock=1;try{if(k==="dus"){if(!C.isDus)choose("dus-4");}else if(C.key!==k)choose("p-"+k);}finally{RS.lock=0;}
+  RS.lock=1;try{if(k==="dus"){if(!C.isDus)choose(DUS_SEL);}else if(C.key!==k)choose("p-"+k);}finally{RS.lock=0;}
   rsCity(k);keep();if(location.hash==="#staus/karte")mapGo(k);
   {const h=location.hash.slice(1);if(h==="parken")pkShow(k);else if(h==="eladen"){ELP=null;loadEL();}else if(h==="tanken")loadFuel();}
   // Seite bleibt, wo sie ist, solange die Daten neu geladen werden (außer man scrollt selbst)
@@ -2125,8 +2119,8 @@ function setBtns(box,html){if(!box)return;const t=document.createElement("div");
   if(old.length===nw.length&&old.every((o,i)=>o.tagName===nw[i].tagName&&o.outerHTML.split(">")[0].replace(/class="[^"]*"/,"")===nw[i].outerHTML.split(">")[0].replace(/class="[^"]*"/,""))){
     old.forEach((o,i)=>{if(o.className!==nw[i].className)o.className=nw[i].className;if(o.innerHTML!==nw[i].innerHTML)o.innerHTML=nw[i].innerHTML;});}
   else box.innerHTML=html;}
-// ÖPNV: Auswahl per Knopf statt langer Liste (Abfahrten vor Ort bzw. Verbindungen Dortmund ⇄ Datteln)
-const OEOPT={dortmund:[["o-do-dat","Westfalenstadion → Datteln Busbahnhof"],["dep","Westfalenstadion → Hauptbahnhof"]],datteln:[["dep","Bus Lohstraße ⇄ Busbahnhof"],["o-dat-do","Datteln Busbahnhof → Dortmund Hbf"]]};
+// ÖPNV: Auswahl per Knopf statt langer Liste (Abfahrten vor Ort)
+const OEOPT={};
 function rsOe(){const opts=OEOPT[RS.city]||[["dep","Abfahrten vor Ort"]];if(!opts.some(o=>o[0]===RS.oe))RS.oe=opts.length>1?null:opts[0][0];
   const seg=$("oe-seg");seg.hidden=opts.length<2;seg.style.gridTemplateColumns="repeat("+opts.length+",1fr)";setBtns(seg,opts.map(([k,l])=>'<button type="button" data-oe="'+k+'" class="'+(RS.oe===k?"on":"")+'">'+l+'</button>').join(""));
   const ob=$("oe-trips"),sec=ob.closest("section"),dep=$("oe-dep");
@@ -2196,14 +2190,14 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-al]");if(!
 document.addEventListener("click",e=>{const g=e.target.closest("[data-vtgo]");if(g){const b=document.querySelector('#vt-seg [data-vts="'+g.dataset.vtgo+'"]');if(b){b.click();setTimeout(()=>$("vt-seg").scrollIntoView({behavior:"smooth",block:"start"}),30);}}});
 document.addEventListener("click",e=>{const b=e.target.closest("[data-vts]");if(!b)return;const k=b.dataset.vts;
   document.querySelectorAll("#vt-seg [data-vts]").forEach(x=>x.classList.toggle("on",x===b));document.querySelectorAll("[data-vtp]").forEach(p=>p.hidden=p.dataset.vtp!==k);});
-function karteLbl(k){return "Verkehrslage";k=k||(MAPGO==="dus"||MAPGO==="datteln"?MAPGO:(C.key==="datteln"?"datteln":"dus"));return k==="datteln"?"Staus & Baustellen":"Sperrungen & Events";}
-function mapCity(k){const rr=k==="r0"||k==="r1";if(rr){const p=$("mapcity-route").parentNode;p.append($("mapcity-route"),$(k==="r0"?"mapcity-dus":"mapcity-datteln"),$(k==="r0"?"mapcity-datteln":"mapcity-dus"));}
-  $("mapcity-route").hidden=!rr;if(!rr)MAPRT=null;if(k!=="dus"&&k!=="datteln"&&!rr)k=null;$("mapcity-dus").hidden=!(rr||k==="dus");$("mapcity-datteln").hidden=!(rr||k==="datteln");if(rr)k=null;if(k){document.querySelectorAll("a[data-karte]").forEach(a=>a.textContent=karteLbl(k));document.querySelectorAll("#mapgo [data-mapgo]").forEach(b=>b.classList.toggle("on",b.dataset.mapgo===k));}setStauTitle();}
+function karteLbl(k){return "Verkehrslage";k=k||(MAPGO==="dus"||MAPGO==="korschenbroich"?MAPGO:(C.key==="korschenbroich"?"korschenbroich":"dus"));return k==="korschenbroich"?"Staus & Baustellen":"Sperrungen & Events";}
+function mapCity(k){const rr=k==="r0"||k==="r1";if(rr){const p=$("mapcity-route").parentNode;p.append($("mapcity-route"),$(k==="r0"?"mapcity-dus":"mapcity-korschenbroich"),$(k==="r0"?"mapcity-korschenbroich":"mapcity-dus"));}
+  $("mapcity-route").hidden=!rr;if(!rr)MAPRT=null;if(k!=="dus"&&k!=="korschenbroich"&&!rr)k=null;$("mapcity-dus").hidden=!(rr||k==="dus");$("mapcity-korschenbroich").hidden=!(rr||k==="korschenbroich");if(rr)k=null;if(k){document.querySelectorAll("a[data-karte]").forEach(a=>a.textContent=karteLbl(k));document.querySelectorAll("#mapgo [data-mapgo]").forEach(b=>b.classList.toggle("on",b.dataset.mapgo===k));}setStauTitle();}
 async function mapGo(k){MAPGO=k;document.querySelectorAll("#mapgo [data-mapgo]").forEach(b=>b.classList.toggle("on",b.dataset.mapgo===k));mapCity(k);
   const info=$("mapgo-info");if(!MAP){try{ensureMap();}catch(e){}}
   if(MAP){MAP.invalidateSize();if(MAP._route){MAP._route.remove();MAP._route=null;}}
   if(TOWNS[k]){const T=TOWNS[k];if(MAP)MAP.setView([T.lat,T.lon],T.z);info.textContent="Live-Verkehr rund um "+T.name+(MAPMODE!=="tomtom"&&TTKEY?" · für alle Straßen oben „TomTom“ wählen":"");return;}
-  const A=homeOr("dus"),B=homeOr("datteln");const [o,d,t]=k==="r0"?[A,B,"Düsseldorf → Datteln"]:[B,A,"Datteln → Düsseldorf"];
+  const A=homeOr("dus"),B=homeOr("korschenbroich");const [o,d,t]=k==="r0"?[A,B,"Düsseldorf → "+CITYN.korschenbroich]:[B,A,CITYN.korschenbroich+" → Düsseldorf"];
   if(!TTKEY){info.textContent="Für die Strecke den TomTom-Schlüssel unter Einstellungen eintragen.";if(MAP)MAP.fitBounds([[o.lat,o.lon],[d.lat,d.lon]],{padding:[20,20]});return;}
   info.textContent=t+" · Strecke wird berechnet …";
   try{let pts=null,secs=[],sm=null;const c=CARR.find(r=>r&&r.t===t&&r.pts);
@@ -2232,7 +2226,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-mapgo]");i
 
 // ================= E-Ladesäulen (OpenStreetMap, ganz DE/AT) =================
 var ELKEY=null,ELR=load("el_rad")||2,ELF=load("el_f")||"all",ELD=null,ELP=null,ELMAP=null,ELLAY=null;
-function elFavs(){const F=[["dus","Düsseldorf",51.2254,6.7763],["datteln","Datteln",51.6539,7.3417],["dortmund","Dortmund",51.5136,7.4653],["alpen","Alpen-Menzelen",51.6449,6.5634],["salzhausen","Salzhausen",53.2236,10.1645]];
+function elFavs(){const F=[["dus","Düsseldorf",51.2254,6.7763],...FAVS.map(f=>[f.key,f.name,f.lat,f.lon])];
   return F.map(([k,n,la,lo])=>{const H=HOMES[k];return {k,name:n,lat:H&&isFinite(H.lat)?H.lat:la,lon:H&&isFinite(H.lon)?H.lon:lo};});}
 function renderELWhere(){const w=$("el-where");w.style.gridTemplateColumns="1fr";w.innerHTML='<button type="button" data-elw="gps" class="gpsbtn'+(ELP&&ELP.k==="gps"?" on":"")+'"><svg class="pin" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.4"/></svg>An meinem Standort suchen</button>';}
 function renderELSeg(){$("el-seg").innerHTML='<div class="seg s3">'+[[2,"2 km"],[5,"5 km"],[10,"10 km"]].map(([v,l])=>'<button type="button" data-elr="'+v+'" class="'+(ELR==v?"on":"")+'">'+l+'</button>').join("")+'</div><div class="seg">'+
@@ -2331,12 +2325,12 @@ document.addEventListener("submit",async e=>{if(e.target.id!=="el-form")return;e
     hb.innerHTML=r.map(x=>'<button type="button" data-elhit="'+x.lat+','+x.lon+'" data-n="'+esc(x.name||q)+'">'+esc(x.display_name)+'</button>').join("");
   }catch(err){hb.innerHTML='<div class="muted small">Ortssuche nicht erreichbar – '+esc(errText(err))+'.</div>';}});
 
-// ================= Parken Datteln (OpenStreetMap) =================
+// ================= Parken Korschenbroich (OpenStreetMap) =================
 var PKS=null,PKDAT=null,PKGPS=null,PKPOS=null;
-function pkShow(k){PKS=k;{const gb=document.querySelector('#pk-seg [data-pks="gps"]');if(gb){const n=CITYN[(typeof RS!=="undefined"&&RS.city)||"dus"]||"Ort";gb.lastChild.textContent=k==="gps"?"Zurück zu "+n:"An meinem Standort suchen (2 km)";}}const pane=k==="gps"||k==="dus"||k==="datteln"?k:"city";document.querySelectorAll("#pk-seg [data-pks]").forEach(b=>b.classList.toggle("on",b.dataset.pks===k));
-  document.querySelectorAll("#v-parken [data-pk]").forEach(d=>d.hidden=d.dataset.pk!==pane);if(k==="datteln"&&!PKDAT)loadPkDat();if(k==="gps")pkGPS();if(pane==="city")loadPkCity(k);}
+function pkShow(k){PKS=k;{const gb=document.querySelector('#pk-seg [data-pks="gps"]');if(gb){const n=CITYN[(typeof RS!=="undefined"&&RS.city)||"dus"]||"Ort";gb.lastChild.textContent=k==="gps"?"Zurück zu "+n:"An meinem Standort suchen (2 km)";}}const pane=k==="gps"||k==="dus"||k==="korschenbroich"?k:"city";document.querySelectorAll("#pk-seg [data-pks]").forEach(b=>b.classList.toggle("on",b.dataset.pks===k));
+  document.querySelectorAll("#v-parken [data-pk]").forEach(d=>d.hidden=d.dataset.pk!==pane);if(k==="korschenbroich"&&!PKDAT)loadPkDat();if(k==="gps")pkGPS();if(pane==="city")loadPkCity(k);}
 const PKC={};
-const PKCENTER={dortmund:{lat:51.4926,lon:7.4519,lbl:"um das Westfalenstadion"}};
+const PKCENTER={};
 async function loadPkCity(k){const box=$("pk-city");if(!box)return;const Z=PKCENTER[k]||FIXHOME[k]||TOWNS[k];const n=CITYN[k]||k;$("pk-city-h").textContent="Parken in "+n+(PKCENTER[k]?" · Westfalenstadion":"");
   if(PKC[k]){renderPk("pk-city",PKC[k],'Öffentliche Parkmöglichkeiten bis 3 km '+(PKCENTER[k]?PKCENTER[k].lbl:'um deine Adresse in '+esc(n))+', die nächste zuerst. Antippen öffnet die Route in Google Maps.');return;}
   box.innerHTML='<div class="state">wird geladen …</div>';
@@ -2355,10 +2349,10 @@ function pkParse(d,R){return (d.elements||[]).map(e=>{const t=e.tags||{};const l
 async function pkQuery(Z,r){const loc=await osmLocal("p",Z.lat,Z.lon,r/1000);if(loc)return loc;const q='[out:json][timeout:25];(nwr["amenity"="parking"](around:'+r+','+Z.lat+','+Z.lon+');nwr["amenity"="parking_space"]["parking_space"="disabled"](around:'+r+','+Z.lat+','+Z.lon+'););out center tags;';
   return overpass(q);}
 async function loadPkDat(){const box=$("pk-dat");if(!box)return;
-  const H=HOMES.datteln&&isFinite(HOMES.datteln.lat)?HOMES.datteln:null,Z={lat:51.6539,lon:7.3417};
+  const H=HOMES.korschenbroich&&isFinite(HOMES.korschenbroich.lat)?HOMES.korschenbroich:null,Z={lat:TOWNS.korschenbroich.lat,lon:TOWNS.korschenbroich.lon};
   try{const d=await pkQuery(Z,3000);PKDAT=pkParse(d,H||Z);
-    renderPk("pk-dat",PKDAT,'Öffentliche Parkmöglichkeiten, die nächste zuerst (Entfernung von '+(H?"deiner Adresse":"der Innenstadt")+'). Antippen öffnet die Route in Google Maps. Eine Live-Belegung gibt es für Datteln nicht.');
-  }catch(e){box.innerHTML=stateBox("Parkdaten für Datteln nicht verfügbar – "+errText(e)+".");}}
+    renderPk("pk-dat",PKDAT,'Öffentliche Parkmöglichkeiten, die nächste zuerst (Entfernung von '+(H?"deiner Adresse":"der Innenstadt")+'). Antippen öffnet die Route in Google Maps. Eine Live-Belegung gibt es für '+esc(CITYN.korschenbroich)+' nicht.');
+  }catch(e){box.innerHTML=stateBox("Parkdaten für "+CITYN.korschenbroich+" nicht verfügbar – "+errText(e)+".");}}
 function pkGPS(){const box=$("pk-gps");if(!box)return;
   if(!window.isSecureContext||!navigator.geolocation){box.innerHTML=stateBox("Standort wird hier nicht unterstützt.");return;}
   box.innerHTML='<div class="state">Standort wird ermittelt …</div>';
@@ -2388,7 +2382,7 @@ async function refreshAll(force){
   if(force||Date.now()-lastSlow>3600e3||slowKey!==C.key){
     lastSlow=Date.now();slowKey=C.key;
     tasks.push(loadUBA(),loadPollen(),loadHol());
-    tasks.push(loadWindy(),loadParking(),loadTM(),loadFussball());
+    tasks.push(loadWindy(),loadParking(),loadTM());
   }
   await Promise.allSettled(tasks);
   {const um=$("upd-mini");if(um)um.innerHTML="<b>"+esc(C.isDus?"Düsseldorf":C.town)+"</b><span> · zuletzt aktualisiert "+new Date().toLocaleTimeString("de-DE",{...TZ,hour:"2-digit",minute:"2-digit"})+" Uhr</span>";}
@@ -2406,7 +2400,7 @@ const GROUPS={wetter:[["wetter","Wetter"],["bezirke","Wetter Stadtbezirke"]],ver
 function tileAvailable(v){
   v=String(v).split("/")[0];
   if(["bezirke","events"].includes(v))return C.isDus; // Veranstaltungen gibt es nur für Düsseldorf
-  if(v==="einsaetze")return C.key==="datteln";
+  if(v==="einsaetze")return false;
   if(v==="bahn"||v==="oepnv")return false; // jetzt unter Verkehr → Reise → Bus & Bahn
   return !!$("v-"+v);
 }
@@ -2422,7 +2416,7 @@ function saveTileOrder(){store("tile_order",[...document.querySelectorAll("#tile
 function buildViewbar(){
   const cur=location.hash.slice(1).split("/")[0];
   const g=groupOf(cur);
-  // Warnleiste: immer über alle Lieblingsorte (Düsseldorf, Datteln, Dortmund, Alpen-Menzelen, Salzhausen)
+  // Warnleiste: immer über alle Lieblingsorte (Düsseldorf und die Orte aus config/meine-daten.js)
   {const sv=$("tool-src-v"),ks=$("k-src");if(sv&&ks)sv.textContent=((ks.querySelector(".val")||{}).textContent||"").replace(/\s+/g," ").trim().replace(/^[–?-]$/,"");}
   if(WARN_SUM&&WARN_SUM.loaded&&$("warnpill")){const wp=$("warnpill"),L=WARN_SUM.list,tot=L.reduce((t,x)=>t+x.n,0);
     const short=t=>String(t||"").replace(/^Amtliche (UNWETTER)?WARNUNG vor /i,"").replace(/^Amtliche /i,"");
@@ -2438,7 +2432,7 @@ window.addEventListener("hashchange",route);
 function route(){try{route0();}finally{const h=location.hash.slice(1);ROUTEKEY=(h.split("/")[0]||"")+"/"+(h.split("/")[1]||"reise");}}
 function route0(){
   {const h=location.hash.slice(1);if(h==="verkehr"||h==="staus/meld"){history.replaceState(null,"","#staus/karte");}
-  if(h==="stadtverkehr"||h==="stadtdatteln"){const k=h==="stadtverkehr"?"dus":"datteln";MAPFOCUS=1;history.replaceState(null,"","#staus/karte");setTimeout(()=>mapGo(k),250);}}
+  if(h==="stadtverkehr"||h==="stadtkorschenbroich"){const k=h==="stadtverkehr"?"dus":"korschenbroich";MAPFOCUS=1;history.replaceState(null,"","#staus/karte");setTimeout(()=>mapGo(k),250);}}
   let v=location.hash.slice(1);const pane=v.split("/")[1]||"reise";v=v.split("/")[0];
   document.querySelectorAll("#staus [data-pane]").forEach(p=>p.hidden=p.dataset.pane!==pane);
   if(v&&!$("v-"+v))v="";
@@ -2590,7 +2584,7 @@ const rwBreite=(p,div,w)=>p>0?Math.max(rwMin(p,div),p/div*(w||1.2)):0;
     $("bs-dens").addEventListener("click",e=>{const b=e.target.closest("[data-bsd]");if(!b)return;sel=+b.dataset.bsd;$("bs-pers").value=b.querySelector("b").textContent.replace(/\./g,"");calc();});
     $("bs-btn").addEventListener("click",()=>{if(document.body.classList.contains("harrange"))return;calc();dlg.showModal();});}}
 
-// ================= Veranstaltungsflächen Düsseldorf (aus „Berechnung Veranstaltungsflächen“, © Thomas Hußmann) =================
+// ================= Veranstaltungsflächen Düsseldorf (aus „Berechnung Veranstaltungsflächen“, Vorlage: Thomas Hußmann) =================
 {const FL=[["Rheinpark (groß/nördlich)", 220730, "https://maps.duesseldorf.de/?Ls=all&Zoom=7&Center=344243,5679162&Marker=344243,5679162&Rotation=0&Background=bg_stpllight_rvr&Layers=vstfle&Filters=&ExtentsUTM=&PointsUTM=&CirclesUTM=&Lang=de&Nt=false", "https://www.openstreetmap.org/?mlat=51.242535&mlon=6.768503#map=17/51.242535/6.768503"], ["Rheinpark (klein/südlich)", 6676, "https://maps.duesseldorf.de/?Ls=all&Zoom=7&Center=344374,5678298&Marker=344374,5678298&Rotation=0&Background=bg_stpllight_rvr&Layers=vstfle&Filters=&ExtentsUTM=&PointsUTM=&CirclesUTM=&Lang=de&Nt=false", "https://www.openstreetmap.org/?mlat=51.234807&mlon=6.770754#map=18/51.234807/6.770754"], ["Altstadtufer (zwischen Oberkasseler-/Kniebrücke inkl. Burgplatz und altes Hafenbecken)", 86702, "https://maps.duesseldorf.de/?Ls=all&Zoom=6&Center=344250,5677250&Marker=344202,5677038&Rotation=0&Background=bg_stpllight_rvr&Layers=vstfle&Filters=&ExtentsUTM=&PointsUTM=&CirclesUTM=&Lang=de&Nt=false", "https://www.openstreetmap.org/?mlat=51.223439&mlon=6.768840#map=17/51.223439/6.768840"], ["Burgplatz", 6478, "https://maps.duesseldorf.de/?Ls=all&Zoom=8&Center=344379.0,5677437.5&Marker=344376,5677438&Rotation=0&Background=bg_stpllight_rvr&Layers=vstfle&Filters=&ExtentsUTM=&PointsUTM=&CirclesUTM=&Lang=de&Nt=false", "https://www.openstreetmap.org/?mlat=51.227080&mlon=6.771156#map=18/51.227080/6.771156"], ["Marktplatz", 3109, "https://maps.duesseldorf.de/?Ls=all&Zoom=8&Center=344431.0,5677302.5&Marker=344430,5677300&Rotation=0&Background=bg_stpllight_rvr&Layers=vstfle&Filters=&ExtentsUTM=&PointsUTM=&CirclesUTM=&Lang=de&Nt=false", "https://www.openstreetmap.org/?mlat=51.225855&mlon=6.771989#map=18/51.225855/6.771989"], ["Kurze Str./Andreasstr.", 2036, "https://maps.duesseldorf.de/?Ls=all&Zoom=7&Center=344562,5677422&Marker=344500.4,5677412.2&Rotation=0&Background=bg_stpllight_rvr&Layers=vstfle&Filters=&ExtentsUTM=&PointsUTM=&CirclesUTM=&Lang=de&Nt=false", "https://www.openstreetmap.org/?mlat=51.226882&mlon=6.772947#map=18/51.226882/6.772947"], ["Bolkerstr.", 2704, "https://maps.duesseldorf.de/?Ls=all&Zoom=7&Center=344582.1,5677334.3&Marker=344582.1,5677334.3&Rotation=0&Background=bg_stpllight_rvr&Layers=vstfle&Filters=&ExtentsUTM=&PointsUTM=&CirclesUTM=&Lang=de&Nt=false", "https://www.openstreetmap.org/?mlat=51.226205&mlon=6.774150#map=18/51.226205/6.774150"], ["Schadowplatz", 3126, "https://maps.duesseldorf.de/?Ls=all&Zoom=8&Center=345013.5,5677332.0&Marker=345024,5677338&Rotation=0&Background=bg_stpllight_rvr&Layers=vstfle&Filters=&ExtentsUTM=&PointsUTM=&CirclesUTM=&Lang=de&Nt=false", "https://www.openstreetmap.org/?mlat=51.226358&mlon=6.780472#map=18/51.226358/6.780472"], ["G.-Gründgens-Platz", 5642, "https://maps.duesseldorf.de/?Ls=all&Zoom=8&Center=345228.5,5677475.0&Marker=345224,5677478&Rotation=0&Background=bg_stpllight_rvr&Layers=vstfle&Filters=&ExtentsUTM=&PointsUTM=&CirclesUTM=&Lang=de&Nt=false", "https://www.openstreetmap.org/?mlat=51.227670&mlon=6.783274#map=18/51.227670/6.783274"], ["Königsallee, westseitig", 14396, "https://maps.duesseldorf.de/?Ls=all&Zoom=6&Center=344876.0,5676929.5&Marker=344868,5676920&Rotation=0&Background=bg_stpllight_rvr&Layers=vstfle&Filters=&ExtentsUTM=&PointsUTM=&CirclesUTM=&Lang=de&Nt=false", "https://www.openstreetmap.org/?mlat=51.222560&mlon=6.778421#map=18/51.222560/6.778421"], ["Königsallee, ostseitig (Einkaufseite)", 21239, "https://maps.duesseldorf.de/?Ls=all&Zoom=6&Center=344918.5,5676927.0&Marker=344926,5676924&Rotation=0&Background=bg_stpllight_rvr&Layers=vstfle&Filters=&ExtentsUTM=&PointsUTM=&CirclesUTM=&Lang=de&Nt=false", "https://www.openstreetmap.org/?mlat=51.222611&mlon=6.779249#map=18/51.222611/6.779249"], ["Platz des Landtags/Caritas-Platz", 18886, "https://maps.duesseldorf.de/?Ls=all&Zoom=7&Center=343811.5,5676474.1&Marker=343811.5,5676474.1&Rotation=0&Background=bg_stpllight_rvr&Layers=vstfle&Filters=&ExtentsUTM=&PointsUTM=&CirclesUTM=&Lang=de&Nt=false", "https://www.openstreetmap.org/?mlat=51.218265&mlon=6.763498#map=18/51.218265/6.763498"], ["Hafenbecken 1 (inkl. Fußgängerbrücke)", 18104, "https://maps.duesseldorf.de/?Ls=all&Zoom=8&Center=343066.1,5676069.7&Marker=343126.0,5676149.5&Rotation=0&Background=bg_stpllight_rvr&Layers=vstfle&Filters=&ExtentsUTM=&PointsUTM=&CirclesUTM=&Lang=de&Nt=false", "https://www.openstreetmap.org/?mlat=51.215161&mlon=6.753832#map=18/51.215161/6.753832"], ["Oberkasseler Rheinwiesen (zwischen Oberkasseler-/Kniebrücke)", 239904, "https://maps.duesseldorf.de/?Ls=all&Zoom=7&Center=343803,5677386&Marker=343803,5677386&Rotation=0&Background=bg_stpllight_rvr&Layers=vstfle&Filters=&ExtentsUTM=&PointsUTM=&CirclesUTM=&Lang=de&Nt=false", "https://www.openstreetmap.org/?mlat=51.226456&mlon=6.762979#map=17/51.226456/6.762979"]];
   FL.push(["Freie Fläche",0,"",""]);const FREE=FL.length-1; // neutrales Feld für jede beliebige Fläche
   const num=v=>{v=String(v??"").trim().replace(/\s/g,"");if(!v)return NaN;if(/,/.test(v))v=v.replace(/\./g,"").replace(",",".");else if(/^\d{1,3}(\.\d{3})+$/.test(v))v=v.replace(/\./g,"");const n=parseFloat(v);return isFinite(n)?n:NaN;};
