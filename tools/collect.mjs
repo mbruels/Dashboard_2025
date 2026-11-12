@@ -121,10 +121,15 @@ async function uba(p) {
 }
 
 // ---------- ÖPNV ----------
+// Haltestelle wählen: exakter Name zuerst (sonst findet „Mönchengladbach Hbf“ z. B. „Rheydt Hbf“), dann VRR-Empfehlung
+const normN = x => String(x || "").toLowerCase().replace(/hauptbahnhof/g, "hbf").replace(/bahnhof/g, "bf").replace(/[^a-z0-9äöüß]/g, "");
+function bestStop(locs, q) { const n = normN(q); const ex = l => [l.name, l.disassembledName, stopName(l), ((l.parent || {}).name || "") + " " + (l.disassembledName || "")].some(v => normN(v) === n) ? 1 : 0;
+  return [...locs].sort((a, b) => ex(b) - ex(a) || (b.isBest ? 1 : 0) - (a.isBest ? 1 : 0) || (b.matchQuality || 0) - (a.matchQuality || 0))[0]; }
+
 async function efa(stop) {
   // Erst die Haltestelle eindeutig bestimmen, dann die Abfahrten zur Haltestellen-ID abrufen
   const sf = await get("https://efa.vrr.de/standard/XML_STOPFINDER_REQUEST?outputFormat=rapidJSON&language=de&type_sf=any&name_sf=" + encodeURIComponent(stop));
-  const best = (sf.locations || []).filter(l => l.type === "stop").sort((a, b) => (b.isBest ? 1 : 0) - (a.isBest ? 1 : 0))[0];
+  const best = bestStop((sf.locations || []).filter(l => l.type === "stop"), stop);
   if (!best) throw new Error("Haltestelle nicht gefunden: " + stop);
   const d = await get("https://efa.vrr.de/standard/XML_DM_REQUEST?outputFormat=rapidJSON&language=de&type_dm=stop&name_dm=" + encodeURIComponent(best.id) + "&mode=direct&useRealtime=1&limit=40&itdDateTimeDepArr=dep&useAllStops=1");
   d.locations = d.locations && d.locations.length ? d.locations : [best];
@@ -188,7 +193,7 @@ function stopName(x) {
 }
 async function stopId(name) {
   const sf = await get("https://efa.vrr.de/standard/XML_STOPFINDER_REQUEST?outputFormat=rapidJSON&language=de&type_sf=any&name_sf=" + encodeURIComponent(name));
-  const l = (sf.locations || []).filter(x => x.type === "stop").sort((a, b) => (b.isBest ? 1 : 0) - (a.isBest ? 1 : 0))[0] || (sf.locations || [])[0];
+  const l = bestStop((sf.locations || []).filter(x => x.type === "stop"), name) || (sf.locations || [])[0];
   if (!l) throw new Error("nicht gefunden: " + name);
   return { id: l.id, name: stopName(l) };
 }
@@ -337,7 +342,7 @@ async function fernCombos(from, to) {
 await fs.mkdir(OUT, { recursive: true });
 const tasks = [];
 for (const [k, p] of Object.entries(PLACES)) {
-  tasks.push(job("blaulicht-" + k + ".json", () => blaulicht(k, p)));
+  tasks.push(job("blaulicht-" + k + ".json", async () => { const r = await blaulicht(k, p); console.log("::notice::Pressemeldungen " + k + ": " + r.length + " – " + r.slice(0, 3).map(x => x.title.slice(0, 40)).join(" | ")); return r; }));
   tasks.push(job("nina-" + k + ".json", () => ninaDashboard(p)));
   tasks.push(job("uba-" + k + ".json", () => uba(p)));
   if (p.efa) tasks.push(efaPlace(k, p));
