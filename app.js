@@ -2284,7 +2284,7 @@ function spanLast(){["tiles","toolgrid","headnav"].forEach(id=>{const g=document
 ["tiles","toolgrid","headnav"].forEach(id=>{const g=document.getElementById(id);if(g)new MutationObserver(()=>{clearTimeout(spanLast.t);spanLast.t=setTimeout(spanLast,50);}).observe(g,{childList:true,subtree:false,attributes:true,attributeFilter:["hidden","class","style"]});});
 window.addEventListener("resize",()=>spanLast());document.addEventListener("click",()=>setTimeout(spanLast,120));setTimeout(spanLast,300);
 // Kopf-Knöpfe Kalender / Erinnerungen: Ziel lokal anpassbar (z. B. Kurzbefehl)
-const QA={cal:["qa-cal","calshow://"],rem:["qa-rem","x-apple-reminderkit://"],teufel:["qa-teufel","shortcuts://run-shortcut?name=Teufel%20Box"]};
+const QA={cal:["qa-cal","calshow://"],rem:["qa-rem","x-apple-reminderkit://"],teufel:["qa-teufel","shortcuts://run-shortcut?name=Wohnzimmer%20verbinden"]};
 function scUrl(u){const m=/^shortcuts:\/\/run-shortcut\?name=([^&]+)/.exec(u||"");if(!m)return u;const back=encodeURIComponent(location.href.split("#")[0]);return "shortcuts://x-callback-url/run-shortcut?name="+m[1]+"&x-success="+back+"&x-cancel="+back+"&x-error="+back;}
 /* Teufel-Box „Wohnzimmer“: Kurzbefehl schaltet die Tonausgabe um; ein laufendes Radio läuft danach im Dashboard weiter */
 let TF_RESUME=null;
@@ -2302,6 +2302,7 @@ document.addEventListener("visibilitychange",()=>{if(document.hidden||!TF_RESUME
 /* Tonausgabe direkt wählen (AirPlay/Bluetooth-Auswahl von iOS) */
 document.addEventListener("click",e=>{if(!e.target.closest("#r-route"))return;const au=$("radio-audio");
   if(au&&au.webkitShowPlaybackTargetPicker){try{au.webkitShowPlaybackTargetPicker();}catch(x){}}else tfMsg("Die Auswahl gibt es nur in Safari auf iPhone/iPad – sonst über das Kontrollzentrum.");});
+if(load("qa_teufel")==="shortcuts://run-shortcut?name=Teufel%20Box")store("qa_teufel",null);
 function qaInit(){Object.entries(QA).forEach(([k,[id,def]])=>{const v=load("qa_"+k)||"";const a=$(id);if(a)a.href=v||def;const i=$(id+"-in");if(i)i.value=v;});}
 qaInit();
 document.addEventListener("click",e=>{const b=e.target.closest("[data-qasave]");if(!b)return;const k=b.dataset.qasave;const i=$(QA[k][0]+"-in");const v=(i.value||"").trim();
