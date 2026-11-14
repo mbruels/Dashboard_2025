@@ -423,10 +423,10 @@ tasks.push(job("boerse.json", async () => {
     const pts = gt.map((t, i) => gc[i] != null ? { t, usd: gc[i], eur: fxAt(t) ? gc[i] / fxAt(t) : null } : null).filter(Boolean);
     return { pts: pts.filter((_, i) => i % 2 === 0 || i === pts.length - 1) };
   } catch (e) { console.log("::notice::" + label + "-Verlauf: " + e.message); return null; } };
-  const gold = await metal("GC=F", "Gold"), silver = await metal("SI=F", "Silber");
+  const gold = await metal("GC=F", "Gold"), silver = await metal("SI=F", "Silber"), bitcoin = await metal("BTC-USD", "Bitcoin");
   console.log("::notice::Börse: " + quotes.length + " Kurse, DAX " + (quotes[0] && quotes[0].price));
   if (!quotes.length) throw new Error("keine Kurse");
-  return { quotes, gold, silver };
+  return { quotes, gold, silver, bitcoin };
 }));
 for (const [k, url] of Object.entries(ODD)) tasks.push(job("odd-" + k + ".json", async () => places(await get(url, { ms: 40000 }))));
 await Promise.all(tasks);

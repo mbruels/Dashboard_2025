@@ -1975,13 +1975,13 @@ function renderGold(g,fx,o){o=o||{id:"gold",name:"Gold",color:"#c9a227",src:"Gol
   const d=p.map((x,i)=>(i?"L":"M")+X(i).toFixed(1)+" "+Y(x.eur).toFixed(1)).join("");
   const up=ch(365)>=0;
   const months=[];p.forEach((x,i)=>{const dt=new Date(x.t*1000);if(i&&new Date(p[i-1].t*1000).getMonth()!==dt.getMonth()&&dt.getMonth()%3===0)months.push([i,dt.toLocaleDateString("de-DE",{month:"short",year:"2-digit"})]);});
-  box.innerHTML='<div class="row"><div><div class="big">'+nf(last.eur,D)+'<span style="font-size:20px"> € je Feinunze</span></div><div class="muted">'+nf(last.eur/OZ,2)+' € je Gramm · '+nf(last.usd,D)+' US-$ je Feinunze</div></div></div>'+
+  box.innerHTML='<div class="row"><div><div class="big">'+nf(last.eur,D)+'<span style="font-size:20px"> € je '+(o.unit||"Feinunze")+'</span></div><div class="muted">'+(o.unit?"":nf(last.eur/OZ,2)+' € je Gramm · ')+nf(last.usd,D)+' US-$ je '+(o.unit||"Feinunze")+'</div></div></div>'+
     '<div class="facts" style="margin:8px 0">'+[[7,"1 Woche"],[30,"1 Monat"],[182,"6 Monate"],[365,"1 Jahr"]].map(([n,l])=>{const v=ch(n);return fact('<span style="color:'+(v>=0?"var(--ok)":"var(--bad)")+'">'+fmtP(v)+'</span>',l);}).join("")+'</div>'+
     '<svg class="chart" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="'+o.name+'preis 12 Monate in Euro">'+
     [mn,(mn+mx)/2,mx].map(v=>'<line x1="'+pl+'" x2="'+(W-pr)+'" y1="'+Y(v)+'" y2="'+Y(v)+'" stroke="var(--line)"/><text x="'+(pl-6)+'" y="'+(Y(v)+4)+'" text-anchor="end">'+nf(v,D)+'</text>').join("")+
     months.map(([i,l])=>'<text x="'+X(i)+'" y="'+(H-4)+'" text-anchor="middle">'+l+'</text>').join("")+
     '<path d="'+d+'L'+X(p.length-1)+' '+(H-pb)+'L'+pl+' '+(H-pb)+'Z" fill="'+o.color+'" opacity=".15"/><path d="'+d+'" fill="none" stroke="'+o.color+'" stroke-width="2.2"/></svg>'+
-    '<div class="muted small">'+o.src+', in Euro umgerechnet · Tageswerte der letzten 12 Monate · Keine Anlageberatung.</div>';}
+    '<div class="muted small">'+o.src+(o.unit?'':', in Euro umgerechnet')+' · Tageswerte der letzten 12 Monate · Keine Anlageberatung.</div>';}
 async function loadBoerse(){
   try{
     const d=await getData("boerse.json");const q=(d.data&&d.data.quotes)||[];if(!q.length)throw new Error("keine Kurse");
@@ -1991,7 +1991,7 @@ async function loadBoerse(){
     const dax=q.find(x=>x.sym==="^GDAXI");
     const berlin=new Date(new Date().toLocaleString("en-US",{timeZone:"Europe/Berlin"}));const wd=berlin.getDay(),mm=berlin.getHours()*60+berlin.getMinutes();
     const xetra=wd>0&&wd<6&&mm>=540&&mm<1050;
-    renderGold(d.data.gold,q.find(x=>x.sym==="EURUSD=X"));renderGold(d.data.silver,null,{id:"silver",name:"Silber",color:"#9fb3c8",dig:2,src:"Silber-Terminkontrakt (COMEX)"});
+    renderGold(d.data.gold,q.find(x=>x.sym==="EURUSD=X"));renderGold(d.data.silver,null,{id:"silver",name:"Silber",color:"#9fb3c8",dig:2,src:"Silber-Terminkontrakt (COMEX)"});renderGold(d.data.bitcoin,null,{id:"bitcoin",name:"Bitcoin",color:"#f7931a",unit:"Bitcoin",src:"Bitcoin in US-Dollar, in Euro umgerechnet"});
     $("boerse").innerHTML='<div class="row" style="margin-bottom:8px"><div class="muted small">Xetra '+(xetra?'<b style="color:var(--ok)">geöffnet</b> (9:00–17:30)':'<b>geschlossen</b> – Werte vom letzten Handel')+' · Kurse mit ca. 15 Min. Verzögerung</div></div>'+
       '<div class="mk">'+q.map(x=>{const ch=x.prev?(x.price-x.prev)/x.prev*100:null;const up=ch==null||ch>=0;
         const dig=x.price>=1000?0:x.price>=10?2:4;
