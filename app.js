@@ -550,7 +550,7 @@ document.addEventListener("click",e=>{const a=e.target.closest("a[data-app],butt
 function radioShow(open){const l=$("radio-list");l.hidden=!open;document.body.classList.toggle("r-open",open);
   document.querySelectorAll("#radio-toggle,[data-radio-open]").forEach(x=>{x.setAttribute("aria-expanded",open?"true":"false");x.classList.toggle("on",open&&x.hasAttribute("data-radio-open"));});}
 document.addEventListener("click",e=>{const t=e.target.closest("#radio-toggle,[data-radio-open]");if(!t||(typeof HEDIT!=="undefined"&&HEDIT))return;radioShow($("radio-list").hidden);});
-function radioTile(){const o=document.querySelector("#radio .rbtn.on");document.querySelectorAll("[data-radio-open] .hn-v").forEach(v=>v.textContent=o?o.querySelector("b").textContent.trim()+" läuft":"Teufel · WDR 2 · weitere");
+function radioTile(){const o=document.querySelector("#radio .rbtn.on");document.querySelectorAll("[data-radio-open] .hn-v").forEach(v=>v.textContent=o?o.querySelector("b").textContent.trim()+" läuft":"Wohnzimmer · WDR 2 · weitere");
   document.body.classList.toggle("radio-on",!!o);if(o){const ic=o.querySelector(".r-ic");const m=ic&&(ic.getAttribute("style")||"").match(/#[0-9a-f]{6}/gi);if(m&&m.length>1){document.body.style.setProperty("--rc1",m[0]);document.body.style.setProperty("--rc2",m[1]);}}}
 new MutationObserver(radioTile).observe($("radio"),{subtree:true,attributes:true,attributeFilter:["class"]});
 /* schließen: Kreuz, Tipp auf leere Fläche, Auswahl eines Senders, Esc */
@@ -2286,7 +2286,22 @@ window.addEventListener("resize",()=>spanLast());document.addEventListener("clic
 // Kopf-Knöpfe Kalender / Erinnerungen: Ziel lokal anpassbar (z. B. Kurzbefehl)
 const QA={cal:["qa-cal","calshow://"],rem:["qa-rem","x-apple-reminderkit://"],teufel:["qa-teufel","shortcuts://run-shortcut?name=Teufel%20Box"]};
 function scUrl(u){const m=/^shortcuts:\/\/run-shortcut\?name=([^&]+)/.exec(u||"");if(!m)return u;const back=encodeURIComponent(location.href.split("#")[0]);return "shortcuts://x-callback-url/run-shortcut?name="+m[1]+"&x-success="+back+"&x-cancel="+back+"&x-error="+back;}
-document.addEventListener("click",e=>{const a=e.target.closest("#qa-teufel,[data-teufel]");if(!a||(typeof HEDIT!=="undefined"&&HEDIT))return;e.preventDefault();location.href=scUrl(load("qa_teufel")||QA.teufel[1]);});
+/* Teufel-Box „Wohnzimmer“: Kurzbefehl schaltet die Tonausgabe um; ein laufendes Radio läuft danach im Dashboard weiter */
+let TF_RESUME=null;
+function tfMsg(t,ok,tap){let el=$("tf-toast");if(!el){el=document.createElement("button");el.type="button";el.id="tf-toast";document.body.appendChild(el);}
+  el.textContent=t;el.className=ok===1?"ok":ok===0?"act":"";el.hidden=false;el.onclick=()=>{el.hidden=true;if(tap)tap();};clearTimeout(tfMsg.t);if(!tap)tfMsg.t=setTimeout(()=>el.hidden=true,ok===1?3500:15000);}
+document.addEventListener("click",e=>{const a=e.target.closest("#qa-teufel,[data-teufel]");if(!a||(typeof HEDIT!=="undefined"&&HEDIT))return;e.preventDefault();
+  const au=$("radio-audio"),on=document.querySelector("#radio .rbtn.on");
+  TF_RESUME={st:on&&!au.paused?on.dataset.st:null,at:Date.now()};tfMsg("Verbinde mit Wohnzimmer …");
+  location.href=scUrl(load("qa_teufel")||QA.teufel[1]);});
+document.addEventListener("visibilitychange",()=>{if(document.hidden||!TF_RESUME)return;const r=TF_RESUME;TF_RESUME=null;if(Date.now()-r.at>5*60e3)return;
+  const au=$("radio-audio");
+  if(!r.st){tfMsg("Wohnzimmer verbunden ✓ – Radio starten, um dort zu hören",1);return;}
+  if(!au.paused){tfMsg("Radio läuft jetzt über Wohnzimmer ✓",1);return;}
+  au.play().then(()=>tfMsg("Radio läuft jetzt über Wohnzimmer ✓",1)).catch(()=>tfMsg("▶ Antippen: Radio über Wohnzimmer weiterhören",0,()=>au.play().catch(()=>{})));});
+/* Tonausgabe direkt wählen (AirPlay/Bluetooth-Auswahl von iOS) */
+document.addEventListener("click",e=>{if(!e.target.closest("#r-route"))return;const au=$("radio-audio");
+  if(au&&au.webkitShowPlaybackTargetPicker){try{au.webkitShowPlaybackTargetPicker();}catch(x){}}else tfMsg("Die Auswahl gibt es nur in Safari auf iPhone/iPad – sonst über das Kontrollzentrum.");});
 function qaInit(){Object.entries(QA).forEach(([k,[id,def]])=>{const v=load("qa_"+k)||"";const a=$(id);if(a)a.href=v||def;const i=$(id+"-in");if(i)i.value=v;});}
 qaInit();
 document.addEventListener("click",e=>{const b=e.target.closest("[data-qasave]");if(!b)return;const k=b.dataset.qasave;const i=$(QA[k][0]+"-in");const v=(i.value||"").trim();
@@ -2455,7 +2470,7 @@ function buildViewbar(){
     if(v==="bahn"){const rows=[...t.querySelectorAll(".s8r")].map(r=>'<span class="s8n" data-s8dir="'+r.dataset.s8dir+'"><span class="s8a">'+esc(r.querySelector("span").textContent)+'</span><b>'+esc(r.querySelector("b").textContent)+'</b>'+(r.querySelector("em")?'<em>'+esc(r.querySelector("em").textContent)+'</em>':'<em></em>')+'</span>').join("");
       return [v,'<a data-v="bahn" class="hbtn hn-'+st+' hn-s8'+(on?" on":"")+'" href="#bahn"><span class="hn-l">S8 · nächste Bahn</span>'+(rows||'<span class="hn-v">wird geladen …</span>')+'</a>'];}
     return [v,'<a data-v="'+v+'" class="hbtn hn-'+st+(on?" on":"")+'" href="#'+(v==="staus"?"staus/reise":v)+'"><span class="hn-l">'+esc(t.querySelector(".lbl").textContent)+'</span><span class="hn-v">'+esc(((t.querySelector(".val")||{}).textContent||"").replace(/\s+/g," ").trim().replace(/^[–?-]$/,"…").slice(0,26))+'</span></a>'];});
-  const html=x=>x[1];const radio='<button type="button" class="hbtn hn-info hn-radio'+($("radio-list")&&!$("radio-list").hidden?" on":"")+'" data-radio-open aria-controls="radio-list"><span class="hn-l">Radio</span><span class="hn-v">'+esc((()=>{const o=document.querySelector("#radio .rbtn.on");return o?o.querySelector("b").textContent.trim()+" läuft":"Teufel · WDR 2 · weitere";})())+'</span></button>';
+  const html=x=>x[1];const radio='<button type="button" class="hbtn hn-info hn-radio'+($("radio-list")&&!$("radio-list").hidden?" on":"")+'" data-radio-open aria-controls="radio-list"><span class="hn-l">Radio</span><span class="hn-v">'+esc((()=>{const o=document.querySelector("#radio .rbtn.on");return o?o.querySelector("b").textContent.trim()+" läuft":"Wohnzimmer · WDR 2 · weitere";})())+'</span></button>';
   const DOCS='<a class="hbtn hn-info hn-docs" href="'+esc(docsUrl())+'" data-docs><span class="hn-l">Einsatz-Dokumente</span><span class="hn-v">Ordner in Dateien</span></a>';
   const ST='<a class="hbtn hn-info hn-ships" href="#rhein" data-ships><span class="hn-l">Schiffe Rhein</span><span class="hn-v">Live-Karte · AIS</span></a>'+'<a class="hbtn hn-info hn-trains" href="https://travic.app/?z=12&x=739161&y=6657636" target="_blank" rel="noopener"><span class="hn-l">Züge live</span><span class="hn-v">Karte · Travic</span></a>';
   {const fw=$("fwnav");const box='<div class="hn-fw"><div class="hn-fw-h">Feuerwehr Düsseldorf</div><div class="hn-fw-g">'+FWV.map(v=>(items.find(x=>x[0]===v)||[,""])[1]).join("")+ST+DOCS+'</div></div>';if(fw)fw.innerHTML=box;
