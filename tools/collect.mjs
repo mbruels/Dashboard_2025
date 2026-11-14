@@ -404,7 +404,7 @@ tasks.push(job("radio.json", async () => {
   return out;
 }));
 tasks.push(job("boerse.json", async () => {
-  const SYMS = [["^GDAXI", "DAX"], ["^MDAXI", "MDAX"], ["^TECDAX", "TecDAX"], ["^STOXX50E", "Euro Stoxx 50"], ["^GSPC", "S&P 500"], ["^IXIC", "Nasdaq"], ["^N225", "Nikkei 225"], ["EURUSD=X", "Euro in US-Dollar"], ["GC=F", "Gold (USD je Unze)"], ["BZ=F", "Öl Brent (USD je Barrel)"], ["BTC-EUR", "Bitcoin (EUR)"]];
+  const SYMS = [["^GDAXI", "DAX"], ["^MDAXI", "MDAX"], ["^TECDAX", "TecDAX"], ["^STOXX50E", "Euro Stoxx 50"], ["^GSPC", "S&P 500"], ["^IXIC", "Nasdaq"], ["^N225", "Nikkei 225"], ["EURUSD=X", "Euro in US-Dollar"], ["GC=F", "Gold (USD je Unze)"], ["SI=F", "Silber (USD je Unze)"], ["BZ=F", "Öl Brent (USD je Barrel)"], ["BTC-EUR", "Bitcoin (EUR)"]];
   const y = async (sym, q) => { let last; for (const h of ["query1", "query2"]) { try { return await get("https://" + h + ".finance.yahoo.com/v8/finance/chart/" + encodeURIComponent(sym) + "?" + q, { headers: { "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 Safari/605.1.15" } }); } catch (e) { last = e; } } throw last; };
   const quotes = (await Promise.all(SYMS.map(async ([sym, name]) => {
     try {
@@ -415,16 +415,18 @@ tasks.push(job("boerse.json", async () => {
       return { sym, name, price: m.regularMarketPrice, prev: m.chartPreviousClose ?? m.previousClose ?? null, time: m.regularMarketTime, cur: m.currency, m1, pts: pts.filter((_, i) => i % step === 0) };
     } catch (e) { console.log("::notice::Börse " + sym + " fehlgeschlagen: " + e.message); return null; }
   }))).filter(Boolean);
-  let gold = null;
-  try { const g = (await y("GC=F", "range=1y&interval=1d")).chart.result[0]; const fx = (await y("EURUSD=X", "range=1y&interval=1d")).chart.result[0];
-    const gc = g.indicators.quote[0].close, gt = g.timestamp, fc = fx.indicators.quote[0].close, ft = fx.timestamp;
+  // Edelmetalle: Tagesverlauf 12 Monate in USD und Euro je Feinunze
+  let fxh = null; try { fxh = (await y("EURUSD=X", "range=1y&interval=1d")).chart.result[0]; } catch (e) { console.log("::notice::EUR/USD-Verlauf: " + e.message); }
+  const metal = async (sym, label) => { try { const g = (await y(sym, "range=1y&interval=1d")).chart.result[0];
+    const gc = g.indicators.quote[0].close, gt = g.timestamp, fc = fxh ? fxh.indicators.quote[0].close : [], ft = fxh ? fxh.timestamp : [];
     const fxAt = t => { let best = null; for (let i = 0; i < ft.length; i++) { if (ft[i] <= t + 86400 && fc[i] != null) best = fc[i]; } return best; };
     const pts = gt.map((t, i) => gc[i] != null ? { t, usd: gc[i], eur: fxAt(t) ? gc[i] / fxAt(t) : null } : null).filter(Boolean);
-    gold = { pts: pts.filter((_, i) => i % 2 === 0 || i === pts.length - 1) };
-  } catch (e) { console.log("::notice::Gold-Verlauf: " + e.message); }
+    return { pts: pts.filter((_, i) => i % 2 === 0 || i === pts.length - 1) };
+  } catch (e) { console.log("::notice::" + label + "-Verlauf: " + e.message); return null; } };
+  const gold = await metal("GC=F", "Gold"), silver = await metal("SI=F", "Silber");
   console.log("::notice::Börse: " + quotes.length + " Kurse, DAX " + (quotes[0] && quotes[0].price));
   if (!quotes.length) throw new Error("keine Kurse");
-  return { quotes, gold };
+  return { quotes, gold, silver };
 }));
 for (const [k, url] of Object.entries(ODD)) tasks.push(job("odd-" + k + ".json", async () => places(await get(url, { ms: 40000 }))));
 await Promise.all(tasks);

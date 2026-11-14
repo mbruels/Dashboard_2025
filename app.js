@@ -1964,8 +1964,8 @@ function renderCal(){
 function isoWeek(d){const t=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));const n=t.getUTCDay()||7;t.setUTCDate(t.getUTCDate()+4-n);const y=new Date(Date.UTC(t.getUTCFullYear(),0,1));return Math.ceil(((t-y)/864e5+1)/7);}
 
 // ================= Börse =================
-function renderGold(g,fx){const box=$("gold");if(!box)return;
-  if(!g||!g.pts||g.pts.length<5){box.innerHTML=stateBox("Goldpreis-Verlauf noch nicht verfügbar.");return;}
+function renderGold(g,fx,o){o=o||{id:"gold",name:"Gold",color:"#c9a227",src:"Gold-Terminkontrakt (COMEX)"};const box=$(o.id);if(!box)return;const D=o.dig||0,nf=(v,d)=>v.toLocaleString("de-DE",{minimumFractionDigits:d,maximumFractionDigits:d});
+  if(!g||!g.pts||g.pts.length<5){box.innerHTML=stateBox(o.name+"preis-Verlauf noch nicht verfügbar – erscheint nach dem nächsten Lauf des Datensammlers.");return;}
   const p=g.pts.filter(x=>x.eur!=null);const last=p[p.length-1];const OZ=31.1035;
   const ago=days=>{const t=last.t-days*86400;let best=p[0];for(const x of p)if(x.t<=t)best=x;return best;};
   const ch=d=>{const a=ago(d);return (last.eur-a.eur)/a.eur*100;};
@@ -1975,13 +1975,13 @@ function renderGold(g,fx){const box=$("gold");if(!box)return;
   const d=p.map((x,i)=>(i?"L":"M")+X(i).toFixed(1)+" "+Y(x.eur).toFixed(1)).join("");
   const up=ch(365)>=0;
   const months=[];p.forEach((x,i)=>{const dt=new Date(x.t*1000);if(i&&new Date(p[i-1].t*1000).getMonth()!==dt.getMonth()&&dt.getMonth()%3===0)months.push([i,dt.toLocaleDateString("de-DE",{month:"short",year:"2-digit"})]);});
-  box.innerHTML='<div class="row"><div><div class="big">'+Math.round(last.eur).toLocaleString("de-DE")+'<span style="font-size:20px"> € je Unze</span></div><div class="muted">'+(last.eur/OZ).toLocaleString("de-DE",{minimumFractionDigits:2,maximumFractionDigits:2})+' € je Gramm · '+Math.round(last.usd).toLocaleString("de-DE")+' US-$ je Unze</div></div></div>'+
+  box.innerHTML='<div class="row"><div><div class="big">'+nf(last.eur,D)+'<span style="font-size:20px"> € je Feinunze</span></div><div class="muted">'+nf(last.eur/OZ,2)+' € je Gramm · '+nf(last.usd,D)+' US-$ je Feinunze</div></div></div>'+
     '<div class="facts" style="margin:8px 0">'+[[7,"1 Woche"],[30,"1 Monat"],[182,"6 Monate"],[365,"1 Jahr"]].map(([n,l])=>{const v=ch(n);return fact('<span style="color:'+(v>=0?"var(--ok)":"var(--bad)")+'">'+fmtP(v)+'</span>',l);}).join("")+'</div>'+
-    '<svg class="chart" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Goldpreis 12 Monate in Euro">'+
-    [mn,(mn+mx)/2,mx].map(v=>'<line x1="'+pl+'" x2="'+(W-pr)+'" y1="'+Y(v)+'" y2="'+Y(v)+'" stroke="var(--line)"/><text x="'+(pl-6)+'" y="'+(Y(v)+4)+'" text-anchor="end">'+Math.round(v).toLocaleString("de-DE")+'</text>').join("")+
+    '<svg class="chart" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="'+o.name+'preis 12 Monate in Euro">'+
+    [mn,(mn+mx)/2,mx].map(v=>'<line x1="'+pl+'" x2="'+(W-pr)+'" y1="'+Y(v)+'" y2="'+Y(v)+'" stroke="var(--line)"/><text x="'+(pl-6)+'" y="'+(Y(v)+4)+'" text-anchor="end">'+nf(v,D)+'</text>').join("")+
     months.map(([i,l])=>'<text x="'+X(i)+'" y="'+(H-4)+'" text-anchor="middle">'+l+'</text>').join("")+
-    '<path d="'+d+'L'+X(p.length-1)+' '+(H-pb)+'L'+pl+' '+(H-pb)+'Z" fill="#c9a227" opacity=".15"/><path d="'+d+'" fill="none" stroke="#c9a227" stroke-width="2.2"/></svg>'+
-    '<div class="muted small">Gold-Terminkontrakt (COMEX), in Euro umgerechnet · Tageswerte der letzten 12 Monate · Keine Anlageberatung.</div>';}
+    '<path d="'+d+'L'+X(p.length-1)+' '+(H-pb)+'L'+pl+' '+(H-pb)+'Z" fill="'+o.color+'" opacity=".15"/><path d="'+d+'" fill="none" stroke="'+o.color+'" stroke-width="2.2"/></svg>'+
+    '<div class="muted small">'+o.src+', in Euro umgerechnet · Tageswerte der letzten 12 Monate · Keine Anlageberatung.</div>';}
 async function loadBoerse(){
   try{
     const d=await getData("boerse.json");const q=(d.data&&d.data.quotes)||[];if(!q.length)throw new Error("keine Kurse");
@@ -1991,7 +1991,7 @@ async function loadBoerse(){
     const dax=q.find(x=>x.sym==="^GDAXI");
     const berlin=new Date(new Date().toLocaleString("en-US",{timeZone:"Europe/Berlin"}));const wd=berlin.getDay(),mm=berlin.getHours()*60+berlin.getMinutes();
     const xetra=wd>0&&wd<6&&mm>=540&&mm<1050;
-    renderGold(d.data.gold,q.find(x=>x.sym==="EURUSD=X"));
+    renderGold(d.data.gold,q.find(x=>x.sym==="EURUSD=X"));renderGold(d.data.silver,null,{id:"silver",name:"Silber",color:"#9fb3c8",dig:2,src:"Silber-Terminkontrakt (COMEX)"});
     $("boerse").innerHTML='<div class="row" style="margin-bottom:8px"><div class="muted small">Xetra '+(xetra?'<b style="color:var(--ok)">geöffnet</b> (9:00–17:30)':'<b>geschlossen</b> – Werte vom letzten Handel')+' · Kurse mit ca. 15 Min. Verzögerung</div></div>'+
       '<div class="mk">'+q.map(x=>{const ch=x.prev?(x.price-x.prev)/x.prev*100:null;const up=ch==null||ch>=0;
         const dig=x.price>=1000?0:x.price>=10?2:4;
