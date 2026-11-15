@@ -358,7 +358,7 @@ $("alarmbar").addEventListener("click",e=>{if(e.target.closest("[data-ack]")){st
 })();
 // Radio
 let RADIO=null;
-const RADIO_SITE={wdr2:"https://www1.wdr.de/radio/wdr2/",wdr4:"https://www1.wdr.de/radio/wdr4/",antenne:"https://www.antenneduesseldorf.de/",orfstm:"https://steiermark.orf.at/radio/",orfnoe:"https://noe.orf.at/radio/",kronehit:"https://www.kronehit.at/",antstm:"https://www.antenne.at/"};
+const RADIO_SITE={wdr2:"https://www1.wdr.de/radio/wdr2/",wdr4:"https://www1.wdr.de/radio/wdr4/",antenne:"https://www.antenneduesseldorf.de/",radio901:"https://www.radio901.de/",orfstm:"https://steiermark.orf.at/radio/",orfnoe:"https://noe.orf.at/radio/",kronehit:"https://www.kronehit.at/",antstm:"https://www.antenne.at/"};
 /* Einstellungen auf andere Geräte übertragen (Text per AirDrop/Notizen, kein Server) */
 {const SKIP=["placecache","addrcache"],PFX="LAGEBILD1:";
  const msg=(t,c)=>{const m=$("sync-msg");if(!m)return;m.textContent=t;m.className="hint "+(c||"");};
