@@ -2291,7 +2291,14 @@ let TF_RESUME=null;
 function tfMsg(t,ok,tap){let el=$("tf-toast");if(!el){el=document.createElement("button");el.type="button";el.id="tf-toast";document.body.appendChild(el);}
   el.textContent=t;el.className=ok===1?"ok":ok===0?"act":"";el.hidden=false;el.onclick=()=>{el.hidden=true;if(tap)tap();};clearTimeout(tfMsg.t);if(!tap)tfMsg.t=setTimeout(()=>el.hidden=true,ok===1?3500:15000);}
 document.addEventListener("click",e=>{const a=e.target.closest("#qa-teufel,[data-teufel]");if(!a||(typeof HEDIT!=="undefined"&&HEDIT))return;e.preventDefault();
-  const au=$("radio-audio"),on=document.querySelector("#radio .rbtn.on");
+  const au=$("radio-audio");
+  // Teufel One M „Wohnzimmer“ per Bluetooth: Radio starten (falls aus) und direkt die Tonausgabe-Auswahl von iOS öffnen
+  if(au&&au.webkitShowPlaybackTargetPicker){
+    if(au.paused||!au.src){const w=document.querySelector('#radio .rbtn[data-st="wdr2"]')||document.querySelector("#radio .rbtn");if(w&&!w.classList.contains("on"))w.click();}
+    try{au.webkitShowPlaybackTargetPicker();tfMsg("„Wohnzimmer“ antippen – das Radio läuft dann über die Teufel-Box",1);}catch(x){tfMsg("Kontrollzentrum öffnen → Tonausgabe → „Wohnzimmer“");}
+    return;}
+  // sonst: Kurzbefehl (falls eingerichtet)
+  const on=document.querySelector("#radio .rbtn.on");
   TF_RESUME={st:on&&!au.paused?on.dataset.st:null,at:Date.now()};tfMsg("Verbinde mit Wohnzimmer …");
   location.href=scUrl(load("qa_teufel")||QA.teufel[1]);});
 document.addEventListener("visibilitychange",()=>{if(document.hidden||!TF_RESUME)return;const r=TF_RESUME;TF_RESUME=null;if(Date.now()-r.at>5*60e3)return;
