@@ -401,7 +401,7 @@ tasks.push(job("radio.json", async () => {
     out[k] = { name, url };
     
   }
-  console.log("::notice::Radio: " + Object.values(out).map(x => x.name + (x.url ? " ok" : " fehlt")).join(", "));
+  console.log("::notice::Radio: " + Object.values(out).map(x => x.name + (x.url ? " ok (" + x.url.replace(/^https?:\/\//, "").slice(0, 60) + ")" : " fehlt")).join(", "));
   return out;
 }));
 tasks.push(job("boerse.json", async () => {
